@@ -1,0 +1,34 @@
+# Review Reaper - Render Blueprint
+# Deploys the Python web server as a Render Web Service
+# See: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: review-reaper
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python api/server.py
+    healthCheckPath: /api/stats
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: PORT
+        value: "9090"
+      - key: HOST
+        value: 0.0.0.0
+      - key: ADMIN_PASSWORD
+        value: reaper2026
+      - key: DRY_RUN
+        value: "true"
+      - key: BASE_URL
+        value: https://review-reaper.onrender.com
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

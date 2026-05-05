@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  review-reaper:
+    build: .
+    ports:
+      - "9090:9090"
+    environment:
+      - ADMIN_PASSWORD=reaper2026
+      - DRY_RUN=true
+      - HOST=0.0.0.0
+      - PORT=9090
+      - BASE_URL=http://localhost:9090
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
