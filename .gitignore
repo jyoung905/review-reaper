@@ -1,0 +1,10 @@
+# Review Reaper .gitignore
+venv/
+__pycache__/
+*.pyc
+.env
+*.db
+.DS_Store
+*.egg-info/
+dist/
+build/
