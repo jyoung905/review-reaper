@@ -47,6 +47,7 @@ from src.database import (
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
+from src.email_sender import send_outreach_email
 
 
 class ReaperHandler(BaseHTTPRequestHandler):
@@ -157,6 +158,10 @@ class ReaperHandler(BaseHTTPRequestHandler):
                     self._handle_draft_action(body, 'sent')
             elif path == '/api/create-checkout-session':
                 self._handle_create_checkout_session(body)
+            elif path == '/api/send-outreach':
+                self._handle_send_outreach(body)
+            elif path == '/api/scrape-businesses':
+                self._handle_scrape_businesses(body)
             elif path == '/api/stripe-webhook':
                 self._handle_stripe_webhook(body)
             else:
@@ -583,6 +588,128 @@ loadDrafts('pending');
 </script>
 </body>
 </html>'''
+
+    # ─── Email Outreach ─────────────────────────────────────────────────────
+
+    def _handle_send_outreach(self, body):
+        """Send a cold outreach email via SendGrid.
+
+        Request body:
+        {
+            "recipient_email": "owner@business.com",
+            "business_name": "Business Name",
+            "reviews": [
+                {
+                    "reviewer_name": "John D.",
+                    "rating": 2,
+                    "text": "Review text here...",
+                    "ai_generated_text": "AI response...",
+                    "complaint_themes": ["wait_times"],
+                    "recovery_offer": "Optional recovery offer"
+                },
+                ...
+            ]
+        }
+        """
+        try:
+            data = json.loads(body)
+
+            recipient_email = data.get('recipient_email', '').strip()
+            business_name = data.get('business_name', '').strip()
+            reviews = data.get('reviews', [])
+
+            if not recipient_email:
+                self._send_error("recipient_email is required")
+                return
+            if not business_name:
+                self._send_error("business_name is required")
+                return
+            if not reviews:
+                self._send_error("reviews array is required with at least one review")
+                return
+
+            result = send_outreach_email(recipient_email, business_name, reviews)
+
+            if result.get("success"):
+                print(f"\n✉️  Outreach email sent to {recipient_email} for {business_name}")
+                self._send_json(result)
+            else:
+                self._send_error(result.get("message", "Failed to send email"), 500)
+        except json.JSONDecodeError:
+            self._send_error("Invalid JSON body")
+        except Exception as e:
+            self._send_error(str(e), 500)
+
+    # ─── Scrape Businesses (Seed / Structure) ───────────────────────────────
+
+    def _handle_scrape_businesses(self, body):
+        """Seed/stub endpoint for scraping businesses from Google Maps.
+
+        Request body:
+        {
+            "location": "Toronto, ON",
+            "business_type": "auto_shop",
+            "results": [  // optional pre-seeded data
+                {
+                    "name": "Business Name",
+                    "address": "123 Street",
+                    "place_id": "ChIJ...",
+                    "rating": 4.2,
+                    "review_count": 87
+                }
+            ]
+        }
+
+        Currently accepts either manual seed data or returns a placeholder.
+        Full Google Maps scraping integration can be added later.
+        """
+        try:
+            data = json.loads(body)
+            location = data.get('location', '').strip()
+            business_type = data.get('business_type', '').strip()
+            seed_results = data.get('results', [])
+
+            if not location:
+                self._send_error("location is required")
+                return
+            if not business_type:
+                self._send_error("business_type is required")
+                return
+
+            if seed_results:
+                # Seed mode: accept pre-provided business data
+                for biz in seed_results:
+                    if biz.get('place_id'):
+                        # Add to database
+                        add_business(
+                            name=biz.get('name', ''),
+                            place_id=biz['place_id'],
+                            address=biz.get('address', ''),
+                            business_type=business_type,
+                            rating=biz.get('rating'),
+                            total_reviews=biz.get('review_count', 0)
+                        )
+                self._send_json({
+                    "success": True,
+                    "message": f"Seeded {len(seed_results)} businesses",
+                    "businesses": seed_results
+                })
+            else:
+                # Placeholder: tell user how to use this endpoint
+                self._send_json({
+                    "success": True,
+                    "message": "Google Maps scraping placeholder. Pass 'results' array with seed data to add businesses, or integrate a real Maps scraper.",
+                    "query": {
+                        "location": location,
+                        "business_type": business_type
+                    },
+                    "businesses": [],
+                    "hint": "Add 'results' field with [{name, address, place_id, rating, review_count}] to seed businesses into the database."
+                })
+        except json.JSONDecodeError:
+            self._send_error("Invalid JSON body")
+        except Exception as e:
+            self._send_error(str(e), 500)
 
     # ─── Stripe Integration ────────────────────────────────────────────────
 
