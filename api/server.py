@@ -47,7 +47,7 @@ from src.database import (
     save_onboarding_submission, list_onboarding_submissions,
     save_mini_audit, list_mini_audits, list_customers,
     save_reply_event, list_reply_events, upsert_customer,
-    delete_test_records
+    delete_test_records, get_mini_audit
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
@@ -155,6 +155,8 @@ class ReaperHandler(BaseHTTPRequestHandler):
             self._send_html(self._pricing_page())
         elif path == '/mini-audit':
             self._send_html(self._mini_audit_page())
+        elif path == '/mini-audit/report':
+            self._send_html(self._mini_audit_report_page(params))
         elif path == '/onboarding':
             self._send_html(self._onboarding_page(params))
         elif path == '/subscribe/success':
@@ -245,9 +247,18 @@ class ReaperHandler(BaseHTTPRequestHandler):
             self._send_error("Email and business name are required")
             return
         save_audit_request(business_name, data.get('place_id', '').strip(), email)
+        audit_id = save_mini_audit({
+            "prospect_email": email,
+            "business_name": business_name,
+            "website": data.get('website', '').strip(),
+            "review_profile_url": data.get('website', '').strip(),
+            "recommendation": data.get('notes', '').strip(),
+            "status": "requested"
+        })
         upsert_customer(email, business_name=business_name, status='lead', source='mini_audit_request')
         self._send_json({
             "success": True,
+            "mini_audit_id": audit_id,
             "message": "Mini-audit request received. We will prepare review themes and response drafts before pitching a subscription."
         })
 
@@ -1085,6 +1096,31 @@ async function submitMiniAudit(e){e.preventDefault();var b=document.getElementBy
 </form></div></div><script>
 async function submitOnboarding(e){{e.preventDefault();var b=document.getElementById('btn');b.disabled=true;b.textContent='Submitting...';var ids=['session_id','business_name','contact_name','customer_email','approval_email','city','website','review_profile_url','place_id','preferred_tone','liability_notes','service_notes'];var body={{}};ids.forEach(function(id){{body[id]=document.getElementById(id).value}});try{{var r=await fetch('/api/onboarding',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(body)}}),d=await r.json();if(d.success){{document.querySelector('form').innerHTML='<h2>Onboarding received.</h2><p>Your first review scan is queued. We will send the first response pack after setup.</p>'}}else{{alert(d.error||'Something went wrong');b.disabled=false;b.textContent='Submit Onboarding'}}}}catch(err){{alert(err.message);b.disabled=false;b.textContent='Submit Onboarding'}}return false}}
 </script></body></html>'''
+
+    def _mini_audit_report_page(self, params=None):
+        audit_id = None
+        if params:
+            try:
+                audit_id = int(params.get('id', ['0'])[0])
+            except Exception:
+                audit_id = None
+        audit = get_mini_audit(audit_id) if audit_id else None
+        if not audit:
+            return '''<!doctype html><html><head><meta charset="utf-8"><title>Mini-Audit Not Found</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f8f9ff;color:#1a1a2e;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:#fff;border-radius:16px;padding:36px;box-shadow:0 12px 40px rgba(0,0,0,.08);max-width:520px}</style></head><body><div class="card"><h1>Mini-audit not found</h1><p>This report may not be ready yet. If you requested one, we’ll send it when it is prepared.</p><a href="/mini-audit">Request a mini-audit</a></div></body></html>'''
+        def loads(v):
+            try:
+                return json.loads(v or '[]')
+            except Exception:
+                return []
+        examples = loads(audit.get('bad_review_examples'))
+        themes = loads(audit.get('complaint_themes'))
+        drafts = loads(audit.get('response_drafts'))
+        examples_html = ''.join(f'<blockquote>{html.escape(str(x))}</blockquote>' for x in examples) or '<p class="muted">Review examples will appear here once verified.</p>'
+        themes_html = ''.join(f'<span class="tag">{html.escape(str(x))}</span>' for x in themes) or '<span class="tag">Pending review scan</span>'
+        drafts_html = ''.join(f'<div class="draft"><strong>Draft response</strong><p>{html.escape(str(x))}</p></div>' for x in drafts) or '<p class="muted">Response drafts will be added after the scan.</p>'
+        return f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(audit['business_name'])} Mini-Audit</title><style>
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#172033;margin:0;line-height:1.58}}.wrap{{max-width:920px;margin:0 auto;padding:42px 24px}}.hero,.card{{background:#fff;border:1px solid #e7ebf4;border-radius:18px;padding:28px;box-shadow:0 16px 45px rgba(15,23,42,.06);margin-bottom:18px}}.eyebrow{{color:#e94560;font-weight:900;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem}}h1{{font-size:2.35rem;line-height:1.08;margin:8px 0}}.meta{{color:#64748b}}blockquote{{margin:12px 0;padding:14px 16px;background:#f8fafc;border-left:4px solid #e94560;border-radius:8px}}.tag{{display:inline-block;margin:4px 6px 4px 0;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:.84rem;font-weight:800}}.draft{{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin:12px 0}}.cta{{display:inline-block;background:#e94560;color:#fff;padding:13px 20px;border-radius:10px;text-decoration:none;font-weight:900}}.muted{{color:#64748b}}
+</style></head><body><div class="wrap"><section class="hero"><div class="eyebrow">Review Reaper Mini-Audit</div><h1>{html.escape(audit['business_name'])}</h1><p class="meta">Rating: {html.escape(audit.get('public_rating') or 'pending')} • Reviews: {html.escape(audit.get('review_count') or 'pending')}</p><p>This report shows the reputation issues worth addressing first and the kind of approval-ready responses Review Reaper can produce.</p></section><section class="card"><h2>Verified bad-review examples</h2>{examples_html}</section><section class="card"><h2>Complaint themes</h2>{themes_html}</section><section class="card"><h2>Response drafts</h2>{drafts_html}</section><section class="card"><h2>Recommendation</h2><p>{html.escape(audit.get('recommendation') or 'Start by responding professionally to the most specific negative reviews, then monitor new complaints monthly so issues do not compound.')}</p><a class="cta" href="/pricing">Start monthly monitoring — $97/mo</a></section></div></body></html>'''
 
     def _subscription_cancel(self):
         return '''<!DOCTYPE html>

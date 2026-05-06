@@ -48,3 +48,8 @@ Review Reaper does not auto-post responses. It delivers approval-ready review re
 3. Add customer confirmation emails.
 4. Add one-click follow-up sequence for no-reply leads.
 5. Add domain + branded email/domain authentication.
+
+## Mini-audit report engine
+- `/mini-audit/report?id=<id>` renders a customer-facing mini-audit report.
+- New `/api/mini-audit` requests now also create a `mini_audits` queue record and return `mini_audit_id`.
+- Reports show verified bad-review examples, complaint themes, response drafts, recommendation, and CTA to monthly monitoring.

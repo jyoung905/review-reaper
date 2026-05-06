@@ -541,6 +541,15 @@ def list_mini_audits(status=None):
         conn.close()
 
 
+def get_mini_audit(audit_id):
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM mini_audits WHERE id=?", (audit_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
 def list_customers():
     conn = get_connection()
     try:

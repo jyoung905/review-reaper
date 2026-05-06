@@ -85,3 +85,8 @@
 - Added public/admin APIs for mini-audit requests, onboarding, reply event drafting, and operating queue views.
 - Changed outreach email CTA from `/pricing` to `/mini-audit` so future outreach offers value before subscription.
 - Local verification passed for pages and APIs.
+
+## Mini-audit report engine added
+- Added `/mini-audit/report?id=<id>` for customer-facing mini-audit reports.
+- Public `/api/mini-audit` now creates a `mini_audits` queue record and returns `mini_audit_id`.
+- Local verification passed: mini-audit request creates record and report page renders.
