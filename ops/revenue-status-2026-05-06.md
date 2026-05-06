@@ -147,3 +147,9 @@
 - Strongest early candidate from manual evidence: BellaBody PostOperative MedSpa, because public review evidence shows refund/package and communication complaints.
 - Other candidates require exact low-star review evidence/contact verification before any outreach.
 - Subagents are still researching dental, med spa, and auto repair lists in parallel.
+
+## Prospecting research results added
+- Added 15 med spa/cosmetic clinic prospects from Canada/US research.
+- Added 15 dental clinic prospects from Canada/US research.
+- Most are marked `qualified_needs_screenshot_verification` because exact low-star review screenshots/text should be verified before outreach.
+- Current prospect CSV now has first broad-market target pool across med spa, dental, and early auto candidates.
