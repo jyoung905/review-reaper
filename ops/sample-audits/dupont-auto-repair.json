@@ -1,0 +1,24 @@
+{
+  "prospect_email": "info@dupontautorepair.ca",
+  "business_name": "Dupont Auto Repair",
+  "website": "https://dupontautorepair.ca/",
+  "review_profile_url": "Google Maps source: https://www.google.com/maps/search/?api=1&query=Dupont%20Auto%20Repair%20Toronto | official site: https://dupontautorepair.ca/ | info@dupontautorepair.ca found on official site HTML. | Evidence verified: https://reviews.birdeye.com/dupont-auto-repair-167474451501204; https://directory.reviewsonmywebsite.com/reviews/dupont-auto-repair-6217 | SENT 2026-05-06 via SendGrid; follow up 2026-05-11 if no reply.",
+  "public_rating": "4.5",
+  "review_count": "221",
+  "bad_review_examples": [
+    "for rear brake pads and disc, $800? tryna rip off people. DONT GO.",
+    "Honestly these guys are just lazy... I knew he was lying so I took it to another mechanic and all the brakes needed replacing... DONT WASTE YOUR TIME.",
+    "Horrible customer service. Cant speak on the tech side. But on customer service the person who answers the phone needs to be better trained"
+  ],
+  "complaint_themes": [
+    "Pricing / billing transparency",
+    "Communication and follow-up"
+  ],
+  "response_drafts": [
+    "Thank you for taking the time to leave this feedback. We are sorry the estimate and repair communication did not feel clear. Customers should understand what work is recommended and why before making a decision. Please contact our manager so we can review the visit and address your concern directly.",
+    "Thank you for taking the time to leave this feedback. We are sorry the estimate and repair communication did not feel clear. Customers should understand what work is recommended and why before making a decision. Please contact our manager so we can review the visit and address your concern directly.",
+    "Thank you for bringing this to our attention. We are sorry the interaction with our team did not feel respectful or helpful. That is not the impression we want patients or customers to leave with. Please contact our manager so we can review what happened and address it with the team."
+  ],
+  "recommendation": "Start by responding to the most specific negative reviews with calm, non-defensive replies. Then monitor new 1\u20133 star reviews monthly so recurring issues do not sit unanswered. Avoid admitting fault; acknowledge the experience, invite private follow-up, and show future customers the business is responsive.",
+  "status": "draft"
+}

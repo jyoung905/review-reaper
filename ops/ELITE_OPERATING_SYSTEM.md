@@ -69,3 +69,28 @@ Review Reaper does not auto-post responses. It delivers approval-ready review re
 - `ops/generate_followups.py` creates follow-up drafts from `ops/sent-log.csv`.
 - It sends nothing. It separates due-now follow-ups from upcoming follow-ups.
 - Current first-batch follow-ups are due 2026-05-11 if no reply.
+
+## Pre-domain readiness phases
+1. Funnel spine — homepage and mini-audit route capture interest before payment.
+2. Audit production — use verified evidence and `ops/create_mini_audit_from_target.py` to create reports.
+3. Admin operations — `/admin/ops` handles queues, report links, report sending/mark-sent, onboarding status, and reply status.
+4. Follow-up — `ops/generate_followups.py` creates due/upcoming follow-up drafts without sending.
+5. Final handoff — domain + authenticated email domain remains the owner-supplied phase before scaling.
+
+## Sample audit library
+- Internal examples live in `ops/sample-audits/`.
+- Current samples: dental pricing transparency, dental staff/front-desk tone, auto repair quote/communication complaints.
+- Use these as style references for manual fulfillment; do not send them without current approval.
+
+## Latest local end-to-end rehearsal
+Passed locally on port 3012:
+- public mini-audit request saved
+- admin-created report saved
+- report rendered
+- mark-sent path exercised with QA-safe skipped email
+- onboarding submission saved
+- onboarding moved to `in_progress`
+- inbound reply logged
+- reply moved to `approved`
+- `/admin/ops` rendered action buttons
+- QA records cleaned afterward

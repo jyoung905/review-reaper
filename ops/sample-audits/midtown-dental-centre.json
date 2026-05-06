@@ -1,0 +1,23 @@
+{
+  "prospect_email": "info@midtowndental.ca",
+  "business_name": "Midtown Dental Centre",
+  "website": "https://midtowndental.ca/contact/",
+  "review_profile_url": "Email found on official contact page. Good first-send candidate; verify exact complaint screenshots before sending. | Evidence verified: https://reviews.birdeye.com/midtown-dental-centre-176899338831422 | SENT 2026-05-06 via SendGrid; follow up 2026-05-11 if no reply.",
+  "public_rating": "4.6",
+  "review_count": "473",
+  "bad_review_examples": [
+    "Highly advise to get insurance checks prior to appointments as they charge well above the ODA fee guideline. They are not very transparent about it and even charge hidden \u2018premium\u2019 fees for certain Dentists",
+    "Will tell you that it cost a certain amount, then add things after the procedure. Avoid booking they will try to rip you off",
+    "Twice I sought second opinions after being quoted expensive dental treatments at this office. Both times, independent dental professionals confirmed the work was unnecessary."
+  ],
+  "complaint_themes": [
+    "Pricing / billing transparency"
+  ],
+  "response_drafts": [
+    "Thank you for sharing this. We are sorry the treatment recommendation and fees did not feel clear. Patients should feel informed before making decisions about care. Please contact our office manager so we can review the visit details, answer questions about the estimate, and make sure your concerns are handled properly.",
+    "Thank you for sharing this. We are sorry the treatment recommendation and fees did not feel clear. Patients should feel informed before making decisions about care. Please contact our office manager so we can review the visit details, answer questions about the estimate, and make sure your concerns are handled properly.",
+    "Thank you for sharing this. We are sorry the treatment recommendation and fees did not feel clear. Patients should feel informed before making decisions about care. Please contact our office manager so we can review the visit details, answer questions about the estimate, and make sure your concerns are handled properly."
+  ],
+  "recommendation": "Start by responding to the most specific negative reviews with calm, non-defensive replies. Then monitor new 1\u20133 star reviews monthly so recurring issues do not sit unanswered. Avoid admitting fault; acknowledge the experience, invite private follow-up, and show future customers the business is responsive.",
+  "status": "draft"
+}

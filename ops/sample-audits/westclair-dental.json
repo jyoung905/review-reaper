@@ -1,0 +1,23 @@
+{
+  "prospect_email": "unknown@example.com",
+  "business_name": "WestClair Dental",
+  "website": "https://westclairdental.com/contact",
+  "review_profile_url": "No email found on official site; use contact form only after approval or call research for owner/office manager email. | Evidence verified: https://reviews.birdeye.com/westclair-dental-166817286575368",
+  "public_rating": "4.8",
+  "review_count": "480",
+  "bad_review_examples": [
+    "One of the dentists was a very rude dentist she was acting rude and inappropriate",
+    "I called on Monday February 9 at 12:30 pm and spoke to a male at the front desk he was rude",
+    "made the whole process difficult"
+  ],
+  "complaint_themes": [
+    "Customer service tone"
+  ],
+  "response_drafts": [
+    "Thank you for bringing this to our attention. We are sorry the interaction with our team did not feel respectful or helpful. That is not the impression we want patients or customers to leave with. Please contact our manager so we can review what happened and address it with the team.",
+    "Thank you for bringing this to our attention. We are sorry the interaction with our team did not feel respectful or helpful. That is not the impression we want patients or customers to leave with. Please contact our manager so we can review what happened and address it with the team.",
+    "Thank you for bringing this to our attention. We are sorry the interaction with our team did not feel respectful or helpful. That is not the impression we want patients or customers to leave with. Please contact our manager so we can review what happened and address it with the team."
+  ],
+  "recommendation": "Start by responding to the most specific negative reviews with calm, non-defensive replies. Then monitor new 1\u20133 star reviews monthly so recurring issues do not sit unanswered. Avoid admitting fault; acknowledge the experience, invite private follow-up, and show future customers the business is responsive.",
+  "status": "draft"
+}

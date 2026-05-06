@@ -114,3 +114,14 @@
 - Homepage hero now pushes free mini-audit before paid subscription.
 - Homepage form now submits to `/api/mini-audit` instead of the older `/api/audit` path.
 - Homepage pricing card CTA now sends prospects to `/mini-audit`, not directly to Stripe checkout.
+
+## Admin ops and sample report library added
+- Added onboarding queue status endpoint: `/api/admin/onboarding/status`.
+- Added reply workflow status endpoint: `/api/admin/reply/status`.
+- `/admin/ops` now has buttons for:
+  - opening mini-audit reports
+  - emailing/marking mini-audits sent
+  - moving onboarding through setup statuses
+  - approving/marking/closing inbound reply drafts
+- Created internal sample mini-audit library in `ops/sample-audits/` with dental and auto repair examples.
+- Ran local end-to-end rehearsal successfully and cleaned QA records.

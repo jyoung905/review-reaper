@@ -47,7 +47,8 @@ from src.database import (
     save_onboarding_submission, list_onboarding_submissions,
     save_mini_audit, list_mini_audits, list_customers,
     save_reply_event, list_reply_events, upsert_customer,
-    delete_test_records, get_mini_audit, update_mini_audit
+    delete_test_records, get_mini_audit, update_mini_audit,
+    update_onboarding_status, update_reply_event_status
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
@@ -210,6 +211,12 @@ class ReaperHandler(BaseHTTPRequestHandler):
             elif path == '/api/admin/mini-audit/mark-sent':
                 if self._require_auth(body):
                     self._handle_admin_mark_mini_audit_sent(body)
+            elif path == '/api/admin/onboarding/status':
+                if self._require_auth(body):
+                    self._handle_admin_onboarding_status(body)
+            elif path == '/api/admin/reply/status':
+                if self._require_auth(body):
+                    self._handle_admin_reply_status(body)
             elif path == '/api/send-outreach':
                 if self._require_auth(body):
                     self._handle_send_outreach(body)
@@ -341,6 +348,26 @@ class ReaperHandler(BaseHTTPRequestHandler):
         )
         update_mini_audit(int(audit_id), {"status": "sent"})
         self._send_json({"success": True, "mini_audit_id": int(audit_id), "status": "sent", "email": email_result})
+
+    def _handle_admin_onboarding_status(self, body):
+        data = json.loads(body)
+        onboarding_id = data.get('id') or data.get('onboarding_id')
+        status = data.get('status')
+        if not onboarding_id or status not in ('new', 'in_progress', 'first_pack_ready', 'active', 'blocked', 'closed'):
+            self._send_error("valid onboarding_id and status are required")
+            return
+        update_onboarding_status(int(onboarding_id), status)
+        self._send_json({"success": True, "onboarding_id": int(onboarding_id), "status": status})
+
+    def _handle_admin_reply_status(self, body):
+        data = json.loads(body)
+        reply_id = data.get('id') or data.get('reply_id')
+        status = data.get('status')
+        if not reply_id or status not in ('draft', 'approved', 'sent', 'closed', 'ignored'):
+            self._send_error("valid reply_id and status are required")
+            return
+        update_reply_event_status(int(reply_id), status)
+        self._send_json({"success": True, "reply_id": int(reply_id), "status": status})
 
     def _classify_reply(self, text):
         t = text.lower()
@@ -682,17 +709,23 @@ loadDash();
         return '''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Review Reaper - Ops</title><style>
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#1a1a2e;margin:0}.main{max-width:1180px;margin:0 auto;padding:32px 24px}.nav-bar{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}.nav-bar a{padding:8px 14px;border-radius:7px;text-decoration:none;font-size:.9rem;font-weight:700;color:#6c7a9a}.nav-bar a:hover,.nav-bar a.active{background:#e94560;color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}.card{background:#fff;border:1px solid #e5e9f3;border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(15,23,42,.05)}h1{margin:0 0 18px}.item{border-top:1px solid #eef2f7;padding:12px 0}.item:first-child{border-top:0}.muted{color:#64748b;font-size:.86rem}.badge{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:800}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:.84rem}.empty{color:#64748b;padding:20px 0}.toast{position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 18px;border-radius:8px;display:none}.toast.show{display:block}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#1a1a2e;margin:0}.main{max-width:1180px;margin:0 auto;padding:32px 24px}.nav-bar{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}.nav-bar a{padding:8px 14px;border-radius:7px;text-decoration:none;font-size:.9rem;font-weight:700;color:#6c7a9a}.nav-bar a:hover,.nav-bar a.active{background:#e94560;color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}.card{background:#fff;border:1px solid #e5e9f3;border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(15,23,42,.05)}h1{margin:0 0 18px}.item{border-top:1px solid #eef2f7;padding:12px 0}.item:first-child{border-top:0}.muted{color:#64748b;font-size:.86rem}.badge{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:800}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:.84rem}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.btn{border:0;border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:800;cursor:pointer}.btn-primary{background:#e94560;color:#fff}.btn-secondary{background:#eef2ff;color:#3730a3}.btn-success{background:#10b981;color:#fff}.btn-outline{background:#fff;border:1px solid #dbe1ee;color:#334155}.empty{color:#64748b;padding:20px 0}.toast{position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 18px;border-radius:8px;display:none}.toast.show{display:block}
 </style></head><body><div class="main"><div class="nav-bar"><a href="/admin">&#128202; Dashboard</a><a href="/admin/drafts">&#9997; Drafts</a><a class="active" href="/admin/ops">&#128188; Ops</a><a href="/mini-audit">Mini-Audit Page</a><a href="/onboarding">Onboarding Page</a><a href="/" style="margin-left:auto;color:#e94560">&larr; Site</a></div><h1>Review Reaper Operating Desk</h1><div class="grid"><div class="card"><h2>Customers / Leads</h2><div id="customers"></div></div><div class="card"><h2>Onboarding Queue</h2><div id="onboarding"></div></div><div class="card"><h2>Mini-Audits</h2><div id="audits"></div></div><div class="card"><h2>Inbound Reply Drafts</h2><div id="replies"></div></div></div></div><div id="toast" class="toast"></div><script>
 var PW=sessionStorage.getItem('rr_pw');if(!PW){var pw=prompt('Admin password:');if(pw){PW=pw;sessionStorage.setItem('rr_pw',pw)}else{window.location.href='/admin/login'}}
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 async function api(p){var sep=p.indexOf('?')>=0?'&':'?';var r=await fetch(p+sep+'password='+encodeURIComponent(PW));return r.json()}
-function item(title, meta, body, status){return '<div class="item"><strong>'+esc(title)+'</strong> '+(status?'<span class="badge">'+esc(status)+'</span>':'')+'<div class="muted">'+esc(meta||'')+'</div>'+(body?'<pre>'+esc(body)+'</pre>':'')+'</div>'}
+async function post(p,b){var r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({password:PW},b||{}))});return r.json()}
+function toast(m,e){var t=document.getElementById('toast');t.textContent=m;t.style.background=e?'#b91c1c':'#111827';t.classList.add('show');setTimeout(function(){t.classList.remove('show')},3500)}
+function item(title, meta, body, status, actions){return '<div class="item"><strong>'+esc(title)+'</strong> '+(status?'<span class="badge">'+esc(status)+'</span>':'')+'<div class="muted">'+esc(meta||'')+'</div>'+(body?'<pre>'+esc(body)+'</pre>':'')+(actions?'<div class="actions">'+actions+'</div>':'')+'</div>'}
+function btn(label, cls, js){return '<button class="btn '+cls+'" onclick="'+js+'">'+label+'</button>'}
+async function markAuditSent(id){if(!confirm('Email this mini-audit report and mark it sent?'))return;var r=await post('/api/admin/mini-audit/mark-sent',{mini_audit_id:id});toast(r.success?'Mini-audit sent/marked sent':(r.error||'Failed'),!r.success);load()}
+async function onboardStatus(id,status){var r=await post('/api/admin/onboarding/status',{onboarding_id:id,status:status});toast(r.success?'Onboarding moved to '+status:(r.error||'Failed'),!r.success);load()}
+async function replyStatus(id,status){var r=await post('/api/admin/reply/status',{reply_id:id,status:status});toast(r.success?'Reply moved to '+status:(r.error||'Failed'),!r.success);load()}
 async function load(){
 var c=await api('/api/customers');customers.innerHTML=c.length?c.map(x=>item(x.business_name||x.email,x.email+' • '+(x.source||''),'',x.status)).join(''):'<div class="empty">No customers yet</div>';
-var o=await api('/api/onboarding');onboarding.innerHTML=o.length?o.map(x=>item(x.business_name,x.customer_email+' • '+x.created_at,'Review profile: '+(x.review_profile_url||'')+'\nTone: '+(x.preferred_tone||''),x.status)).join(''):'<div class="empty">No onboarding submissions</div>';
-var a=await api('/api/mini-audits');audits.innerHTML=a.length?a.map(x=>item(x.business_name,x.prospect_email+' • '+x.created_at,'Report: '+location.origin+'/mini-audit/report?id='+x.id+'\nThemes: '+(x.complaint_themes||'')+'\nRecommendation: '+(x.recommendation||''),x.status)).join(''):'<div class="empty">No mini-audits saved</div>';
-var r=await api('/api/replies');replies.innerHTML=r.length?r.map(x=>item(x.business_name||x.contact_email,x.classification+' • '+x.created_at,x.recommended_reply,x.status)).join(''):'<div class="empty">No inbound replies logged</div>';
+var o=await api('/api/onboarding');onboarding.innerHTML=o.length?o.map(x=>item(x.business_name,x.customer_email+' • '+x.created_at,'Review profile: '+(x.review_profile_url||'')+'\nTone: '+(x.preferred_tone||'')+'\nApproval email: '+(x.approval_email||''),x.status,btn('Start setup','btn-secondary','onboardStatus('+x.id+',\'in_progress\')')+btn('First pack ready','btn-primary','onboardStatus('+x.id+',\'first_pack_ready\')')+btn('Activate','btn-success','onboardStatus('+x.id+',\'active\')'))).join(''):'<div class="empty">No onboarding submissions</div>';
+var a=await api('/api/mini-audits');audits.innerHTML=a.length?a.map(x=>item(x.business_name,x.prospect_email+' • '+x.created_at,'Report: '+location.origin+'/mini-audit/report?id='+x.id+'\nThemes: '+(x.complaint_themes||'')+'\nRecommendation: '+(x.recommendation||''),x.status,btn('Open report','btn-outline','window.open(\'/mini-audit/report?id='+x.id+'\',\'_blank\')')+(x.status!=='sent'?btn('Email + mark sent','btn-primary','markAuditSent('+x.id+')'):''))).join(''):'<div class="empty">No mini-audits saved</div>';
+var r=await api('/api/replies');replies.innerHTML=r.length?r.map(x=>item(x.business_name||x.contact_email,x.classification+' • '+x.created_at,x.recommended_reply,x.status,btn('Approve','btn-success','replyStatus('+x.id+',\'approved\')')+btn('Mark sent','btn-primary','replyStatus('+x.id+',\'sent\')')+btn('Close','btn-outline','replyStatus('+x.id+',\'closed\')'))).join(''):'<div class="empty">No inbound replies logged</div>';
 }
 load();
 </script></body></html>'''

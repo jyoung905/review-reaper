@@ -59,6 +59,11 @@ def themes_from_weakness(weakness: str) -> list[str]:
 
 def draft_response(business: str, weakness: str, example: str) -> str:
     w = weakness.lower()
+    if any(x in w or x in example.lower() for x in ["rude", "staff", "front desk", "customer service"]):
+        return (
+            "Thank you for bringing this to our attention. We are sorry the interaction with our team did not feel respectful or helpful. "
+            "That is not the impression we want patients or customers to leave with. Please contact our manager so we can review what happened and address it with the team."
+        )
     if "dental" in business.lower() or "upsell" in w or "oda" in example.lower():
         return (
             "Thank you for sharing this. We are sorry the treatment recommendation and fees did not feel clear. "

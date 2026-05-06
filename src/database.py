@@ -491,6 +491,17 @@ def list_onboarding_submissions(status=None):
         conn.close()
 
 
+def update_onboarding_status(onboarding_id, status):
+    """Update onboarding queue status."""
+    conn = get_connection()
+    try:
+        conn.execute("UPDATE onboarding_submissions SET status=? WHERE id=?", (status, onboarding_id))
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
 def save_mini_audit(data):
     """Save a mini-audit draft or sent report."""
     email = (data.get("prospect_email") or data.get("email") or "").strip().lower()
@@ -620,6 +631,17 @@ def list_reply_events(status=None):
             ORDER BY created_at DESC
         """, (status,) if status else ()).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def update_reply_event_status(reply_id, status):
+    """Update inbound reply workflow status."""
+    conn = get_connection()
+    try:
+        conn.execute("UPDATE reply_events SET status=? WHERE id=?", (status, reply_id))
+        conn.commit()
+        return True
     finally:
         conn.close()
 
