@@ -183,7 +183,13 @@ def main() -> int:
     payloads = [(r, p) for r, p in payloads if p]
 
     if not args.send:
-        print(json.dumps([p for _, p in payloads], indent=2))
+        safe_payloads = []
+        for _, payload in payloads:
+            redacted = dict(payload)
+            if redacted.get("password"):
+                redacted["password"] = "[REDACTED]"
+            safe_payloads.append(redacted)
+        print(json.dumps(safe_payloads, indent=2))
         print(f"\nDry run only. {len(payloads)} send-ready direct-email payload(s) prepared; no emails sent.", file=sys.stderr)
         return 0
 
