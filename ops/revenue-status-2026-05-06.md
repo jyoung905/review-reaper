@@ -153,3 +153,9 @@
 - Added 15 dental clinic prospects from Canada/US research.
 - Most are marked `qualified_needs_screenshot_verification` because exact low-star review screenshots/text should be verified before outreach.
 - Current prospect CSV now has first broad-market target pool across med spa, dental, and early auto candidates.
+
+## Auto repair prospecting results added
+- Added 16 auto repair/collision/tire prospects from Canada/US research.
+- Several auto prospects have stronger specific review pain than the dental list: overcharge/misdiagnosis, rude service, delayed/no callback, poor communication, stranded/towing complaints.
+- Some are marked `contact_gap` because evidence is strong but official website/contact path was weak.
+- Current prospect CSV now has dental + med spa + auto targets for prioritization.
