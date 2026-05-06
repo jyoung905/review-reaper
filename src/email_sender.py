@@ -128,8 +128,8 @@ def _build_outreach_html(business_name: str, reviews: list) -> str:
 <td style="background:#fff;padding:32px 24px;border-radius:0 0 12px 12px">
 <h1 style="font-size:22px;margin:0 0 12px">Hi there,</h1>
 <p style="color:#6c7a9a;font-size:15px;line-height:1.6;margin:0 0 8px">
-I noticed <strong>{html.escape(business_name)}</strong> has unanswered negative reviews on Google.
-Left unaddressed, bad reviews can cost you <strong>up to 22% of potential customers</strong>.
+I noticed <strong>{html.escape(business_name)}</strong> has unanswered negative reviews on public review profiles.
+Left unaddressed, bad reviews can cost you potential customers.
 </p>
 <p style="color:#6c7a9a;font-size:15px;line-height:1.6;margin:0 0 16px">
 Here's how <strong>3 of them</strong> could have been handled with AI-generated responses:
@@ -142,7 +142,7 @@ Here's how <strong>3 of them</strong> could have been handled with AI-generated 
 <strong>📊 Review Reaper automatically:</strong>
 </p>
 <p style="color:#065f46;font-size:13px;margin:4px 0">
-✅ Detects all negative reviews (rating ≤ 3) from your Google Business Profile<br>
+✅ Detects negative reviews (rating ≤ 3) across public review profiles<br>
 ✅ Generates professional, context-aware response drafts<br>
 ✅ Suggests personalized recovery offers<br>
 ✅ Tracks complaint themes across all your locations<br>

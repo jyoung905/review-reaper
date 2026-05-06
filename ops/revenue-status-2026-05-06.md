@@ -48,3 +48,11 @@
 - Important quality rule added to `ops/outreach-previews-2026-05-06.md`: rows marked for screenshot verification should not be sent until exact public review evidence is captured.
 - Verified contact emails from official site HTML for: Rejuvenation Med Clinic, Medica Laser Spa, Skin Vitality, Tony Shamas, Dupont Auto Repair, Harbourfront Chiropractic.
 - Nothing has been sent externally.
+
+## Evidence verification + send-ready batch
+- Verified exact public review evidence for Midtown Dental Centre, WestClair Dental, and Dupont Auto Repair.
+- Direct-email send-ready rows: Midtown Dental Centre and Dupont Auto Repair.
+- Contact-form verified row: WestClair Dental; no direct email found, so not included in email sender.
+- Remaining 7 targets require manual Google screenshot verification before quote-based outreach.
+- Added `ops/evidence-verified-2026-05-06.csv` and `ops/send-ready-approval-pack-2026-05-06.md`.
+- Updated `ops/send_outreach_batch.py` so default mode only includes `send_ready_needs_approval` rows and uses verified exact review snippets, not generic placeholder reviews.

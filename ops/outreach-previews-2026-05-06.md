@@ -7,7 +7,7 @@ These are drafts only. Nothing has been sent. Rows marked for screenshot verific
 **Status:** draft only — not sent  
 **Niche/city:** Dental, Toronto  
 **Known weakness:** pricing transparency and alleged unnecessary upsells  
-**Evidence:** visible public snippets: "charge well above ODA fee guideline"; "add things after the procedure"; "quoted expensive treatments... unnecessary"  
+**Evidence:** visible public snippets: "Highly advise to get insurance checks prior to appointments as they charge well above the ODA fee guideline. They are not very transparent about it and even charge hidden ‘premium’ fees for certain Dentists" | "Will tell you that it cost a certain amount, then add things after the procedure. Avoid booking they will try to rip you off" | "Twice I sought second opinions after being quoted expensive dental treatments at this office. Both times, independent dental professionals confirmed the work was unnecessary."  
 **Contact needed:** info@midtowndental.ca; phone (416) 966-3368; contact page https://midtowndental.ca/contact/
 
 ### Subject options
@@ -22,9 +22,7 @@ I was looking at recent public reviews for Midtown Dental Centre and noticed a p
 
 A couple examples stood out:
 
-> charge well above ODA fee guideline
-> add things after the procedure
-> quoted expensive treatments... unnecessary
+> Highly advise to get insurance checks prior to appointments as they charge well above the ODA fee guideline. They are not very transparent about it and even charge hidden ‘premium’ fees for certain Dentists" | "Will tell you that it cost a certain amount, then add things after the procedure. Avoid booking they will try to rip you off" | "Twice I sought second opinions after being quoted expensive dental treatments at this office. Both times, independent dental professionals confirmed the work was unnecessary.
 
 Most businesses either ignore these reviews or reply with something generic. That usually makes the complaint look more credible.
 
@@ -46,7 +44,7 @@ Review Reaper
 **Status:** draft only — not sent  
 **Niche/city:** Dental, Toronto  
 **Known weakness:** staff/front desk rudeness complaints  
-**Evidence:** visible public snippets: "dentist was acting rude and inappropriate"; "front desk... rude"  
+**Evidence:** visible public snippets: "One of the dentists was a very rude dentist she was acting rude and inappropriate" | "I called on Monday February 9 at 12:30 pm and spoke to a male at the front desk he was rude" | "made the whole process difficult"  
 **Contact needed:** contact form on https://westclairdental.com/contact; phone +1 416-760-7660
 
 ### Subject options
@@ -61,8 +59,7 @@ I was looking at recent public reviews for WestClair Dental and noticed a patter
 
 A couple examples stood out:
 
-> dentist was acting rude and inappropriate
-> front desk... rude
+> One of the dentists was a very rude dentist she was acting rude and inappropriate" | "I called on Monday February 9 at 12:30 pm and spoke to a male at the front desk he was rude" | "made the whole process difficult
 
 Most businesses either ignore these reviews or reply with something generic. That usually makes the complaint look more credible.
 
@@ -240,7 +237,7 @@ Review Reaper
 **Status:** draft only — not sent  
 **Niche/city:** Auto repair, Toronto  
 **Known weakness:** quote/communication complaints  
-**Evidence:** themes to verify before sending: Low-star themes to screenshot before send: surprise costs; repair communication; service delays  
+**Evidence:** visible public snippets: "for rear brake pads and disc, $800? tryna rip off people. DONT GO." | "Honestly these guys are just lazy... I knew he was lying so I took it to another mechanic and all the brakes needed replacing... DONT WASTE YOUR TIME." | "Horrible customer service. Cant speak on the tech side. But on customer service the person who answers the phone needs to be better trained"  
 **Contact needed:** info@dupontautorepair.ca
 
 ### Subject options
@@ -253,11 +250,9 @@ Hi Dupont Auto Repair team,
 
 I was looking at recent public reviews for Dupont Auto Repair and noticed a pattern around **quote/communication complaints**.
 
-Before I send anything, I would verify the exact public review screenshots. The patterns I would look for are:
+A couple examples stood out:
 
-> surprise costs
-> repair communication
-> service delays
+> for rear brake pads and disc, $800? tryna rip off people. DONT GO." | "Honestly these guys are just lazy... I knew he was lying so I took it to another mechanic and all the brakes needed replacing... DONT WASTE YOUR TIME." | "Horrible customer service. Cant speak on the tech side. But on customer service the person who answers the phone needs to be better trained
 
 Most businesses either ignore these reviews or reply with something generic. That usually makes the complaint look more credible.
 
