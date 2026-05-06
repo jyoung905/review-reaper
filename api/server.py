@@ -134,16 +134,20 @@ class ReaperHandler(BaseHTTPRequestHandler):
         elif path == '/health':
             self._send_json({"ok": True, "service": "review-reaper", "ts": datetime.utcnow().isoformat()})
         elif path == '/api/stats':
-            self._send_json(get_stats())
+            if self._require_query_auth(params):
+                self._send_json(get_stats())
         elif path == '/api/businesses':
-            self._send_json(list_businesses())
+            if self._require_query_auth(params):
+                self._send_json(list_businesses())
         elif path == '/api/drafts':
-            s = params.get('status', [None])[0]
-            if s and s not in ('pending', 'approved', 'rejected', 'sent'):
-                s = None
-            self._send_json(get_drafts_by_status(s))
+            if self._require_query_auth(params):
+                s = params.get('status', [None])[0]
+                if s and s not in ('pending', 'approved', 'rejected', 'sent'):
+                    s = None
+                self._send_json(get_drafts_by_status(s))
         elif path == '/api/audit-requests':
-            self._send_json(get_audit_requests())
+            if self._require_query_auth(params):
+                self._send_json(get_audit_requests())
         elif path == '/api/customers':
             if self._require_query_auth(params):
                 self._send_json(list_customers())
@@ -660,7 +664,7 @@ if(!PW){var pw=prompt('Admin password:');if(pw){PW=pw;sessionStorage.setItem('rr
 
 function toast(m,e){var t=document.getElementById('toast');t.textContent=m;t.style.background=e?'#d32f2f':'#1a1a2e';t.classList.add('show');setTimeout(function(){t.classList.remove('show')},4000)}
 
-async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(m!=='GET'){o.body=JSON.stringify(Object.assign({password:PW},b||{}))}var r=await fetch(p,o);return r.json()}
+async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(m==='GET'){p+=(p.indexOf('?')>=0?'&':'?')+'password='+encodeURIComponent(PW)}else{o.body=JSON.stringify(Object.assign({password:PW},b||{}))}var r=await fetch(p,o);return r.json()}
 
 async function loadDash(){try{
 var st=await api('GET','/api/stats');
@@ -790,7 +794,7 @@ h1{font-size:1.6rem;margin-bottom:24px}
 var PW=sessionStorage.getItem('rr_pw');
 if(!PW){var pw=prompt('Admin password:');if(pw){PW=pw;sessionStorage.setItem('rr_pw',pw)}else{window.location.href='/admin/login'}}
 function toast(m,e){var t=document.getElementById('toast');t.textContent=m;t.style.background=e?'#d32f2f':'#1a1a2e';t.classList.add('show');setTimeout(function(){t.classList.remove('show')},4000)}
-async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(m!=='GET'){o.body=JSON.stringify(Object.assign({password:PW},b||{}))}var r=await fetch(p,o);return r.json()}
+async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(m==='GET'){p+=(p.indexOf('?')>=0?'&':'?')+'password='+encodeURIComponent(PW)}else{o.body=JSON.stringify(Object.assign({password:PW},b||{}))}var r=await fetch(p,o);return r.json()}
 function htmlEsc(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 async function loadDrafts(status){

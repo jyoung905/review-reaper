@@ -94,3 +94,12 @@ Passed locally on port 3012:
 - reply moved to `approved`
 - `/admin/ops` rendered action buttons
 - QA records cleaned afterward
+
+## Security hardening before traffic
+- Admin data APIs now require the admin password as query auth for GET requests:
+  - `/api/stats`
+  - `/api/businesses`
+  - `/api/drafts`
+  - `/api/audit-requests`
+- Admin dashboard/drafts JS appends the stored admin password for GET requests.
+- Public routes remain public: homepage, `/mini-audit`, report links, onboarding, pricing, checkout.

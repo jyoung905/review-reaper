@@ -125,3 +125,12 @@
   - approving/marking/closing inbound reply drafts
 - Created internal sample mini-audit library in `ops/sample-audits/` with dental and auto repair examples.
 - Ran local end-to-end rehearsal successfully and cleaned QA records.
+
+## Admin API hardening
+- Locked formerly-open admin data endpoints behind password query auth:
+  - `/api/stats`
+  - `/api/businesses`
+  - `/api/drafts`
+  - `/api/audit-requests`
+- Updated admin dashboard and drafts page GET helpers to include password auth.
+- Local verification passed: unauthenticated requests return 401; authenticated requests return 200.
