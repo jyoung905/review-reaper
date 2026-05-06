@@ -46,7 +46,8 @@ from src.database import (
     get_audit_requests, get_complaint_themes, get_review,
     save_onboarding_submission, list_onboarding_submissions,
     save_mini_audit, list_mini_audits, list_customers,
-    save_reply_event, list_reply_events, upsert_customer
+    save_reply_event, list_reply_events, upsert_customer,
+    delete_test_records
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
@@ -194,6 +195,9 @@ class ReaperHandler(BaseHTTPRequestHandler):
             elif path == '/api/reply-event':
                 if self._require_auth(body):
                     self._handle_reply_event(body)
+            elif path == '/api/admin/delete-test-records':
+                if self._require_auth(body):
+                    self._send_json({"success": True, "deleted": delete_test_records()})
             elif path == '/api/send-outreach':
                 if self._require_auth(body):
                     self._handle_send_outreach(body)

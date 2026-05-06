@@ -587,6 +587,30 @@ def list_reply_events(status=None):
         conn.close()
 
 
+def delete_test_records():
+    """Remove non-customer smoke-test records created during QA."""
+    conn = get_connection()
+    try:
+        patterns = ('%@example.com', '%ops-test%', '%test%')
+        deleted = {}
+        for table, col in [
+            ('customers', 'email'),
+            ('audit_requests', 'email'),
+            ('onboarding_submissions', 'customer_email'),
+            ('mini_audits', 'prospect_email'),
+            ('reply_events', 'contact_email'),
+        ]:
+            total = 0
+            for pat in patterns:
+                cur = conn.execute(f"DELETE FROM {table} WHERE {col} LIKE ?", (pat,))
+                total += cur.rowcount or 0
+            deleted[table] = total
+        conn.commit()
+        return deleted
+    finally:
+        conn.close()
+
+
 # ─── Theme Analysis ───────────────────────────────────────────────────────
 
 def get_complaint_themes(business_id):
