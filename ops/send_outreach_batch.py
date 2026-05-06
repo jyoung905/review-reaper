@@ -142,18 +142,24 @@ def post_json(url: str, payload: dict) -> tuple[int, str]:
 
 
 def append_sent(row: dict, response_text: str):
+    from datetime import datetime, timedelta
+
+    sent_at = datetime.now()
+    followup_due = sent_at + timedelta(days=5)
     exists = SENT_LOG.exists() and SENT_LOG.stat().st_size > 0
     with SENT_LOG.open("a", newline="") as f:
-        fields = ["date", "business_name", "recipient", "status", "response"]
+        fields = ["date", "business_name", "email_or_contact", "subject", "status", "followup_due", "notes"]
         writer = csv.DictWriter(f, fieldnames=fields)
         if not exists:
             writer.writeheader()
         writer.writerow({
-            "date": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+            "date": sent_at.isoformat(timespec="seconds"),
             "business_name": row["business_name"],
-            "recipient": direct_email(row.get("email_or_contact", "")),
+            "email_or_contact": direct_email(row.get("email_or_contact", "")),
+            "subject": f"I noticed {row['business_name']} has unanswered bad reviews",
             "status": "sent",
-            "response": response_text[:500],
+            "followup_due": followup_due.date().isoformat(),
+            "notes": response_text[:500],
         })
 
 

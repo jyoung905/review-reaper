@@ -56,3 +56,10 @@
 - Remaining 7 targets require manual Google screenshot verification before quote-based outreach.
 - Added `ops/evidence-verified-2026-05-06.csv` and `ops/send-ready-approval-pack-2026-05-06.md`.
 - Updated `ops/send_outreach_batch.py` so default mode only includes `send_ready_needs_approval` rows and uses verified exact review snippets, not generic placeholder reviews.
+
+## First outreach sent
+- Sent approved first batch on 2026-05-06 at ~10:44 EDT.
+- Midtown Dental Centre → `info@midtowndental.ca` → SendGrid accepted status 202.
+- Dupont Auto Repair → `info@dupontautorepair.ca` → SendGrid accepted status 202.
+- Logged both sends in `ops/sent-log.csv`.
+- Marked both targets as sent in `ops/targets.csv` with follow-up due 2026-05-11 if no reply.

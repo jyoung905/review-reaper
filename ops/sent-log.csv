@@ -1,1 +1,3 @@
 date,business_name,email_or_contact,subject,status,followup_due,notes
+2026-05-06T10:44:39,Midtown Dental Centre,info@midtowndental.ca,I noticed Midtown Dental Centre has unanswered bad reviews,sent,2026-05-11,SendGrid accepted with status 202. Message: Email sent to info@midtowndental.ca (status 202).
+2026-05-06T10:44:40,Dupont Auto Repair,info@dupontautorepair.ca,I noticed Dupont Auto Repair has unanswered bad reviews,sent,2026-05-11,SendGrid accepted with status 202. Message: Email sent to info@dupontautorepair.ca (status 202).
