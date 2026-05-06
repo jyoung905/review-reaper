@@ -12,5 +12,22 @@
 ## Files
 - `targets.csv` — prospect list
 - `drafts.md` — first outreach drafts
+- `outreach-previews-YYYY-MM-DD.md` — approval-ready copy previews
+- `send_outreach_batch.py` — safe batch sender; dry-run by default
 - `sent-log.csv` — sent emails and follow-ups
 - `replies.md` — reply tracking
+
+## Sending rule
+Generate/send flow:
+
+```bash
+./ops/send_outreach_batch.py --limit 5
+```
+
+This only prints API payloads. To actually send after James approves the exact batch/content:
+
+```bash
+REVIEW_REAPER_OUTREACH_APPROVED=yes ./ops/send_outreach_batch.py --send --limit 5
+```
+
+Do not set `REVIEW_REAPER_OUTREACH_APPROVED=yes` until the batch has explicit approval.
