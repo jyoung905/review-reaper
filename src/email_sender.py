@@ -6,7 +6,7 @@ Handles sending cold outreach emails to businesses about their bad reviews.
 
 import os
 import json
-import html
+import html as html_lib
 from pathlib import Path
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, From, To, Subject, HtmlContent
@@ -65,18 +65,18 @@ def _build_outreach_html(business_name: str, reviews: list) -> str:
 
     for i, r in enumerate(reviews[:3], 1):
         stars = rating_stars.get(r.get("rating", 0), "")
-        reviewer = html.escape(str(r.get("reviewer_name", "Anonymous")))
-        text = html.escape(str(r.get("text", "")))
-        response = html.escape(str(r.get("ai_generated_text", "")))
+        reviewer = html_lib.escape(str(r.get("reviewer_name", "Anonymous")))
+        text = html_lib.escape(str(r.get("text", "")))
+        response = html_lib.escape(str(r.get("ai_generated_text", "")))
         themes = r.get("complaint_themes", [])
-        offer = html.escape(str(r.get("recovery_offer", "")))
+        offer = html_lib.escape(str(r.get("recovery_offer", "")))
 
         themes_html = ""
         if themes:
             theme_tags = " ".join(
                 f'<span style="display:inline-block;background:#eef2ff;color:#4338ca;'
                 f'padding:2px 8px;border-radius:4px;font-size:12px;margin:2px">'
-                f'{html.escape(str(t).replace("_", " ").title())}</span>'
+                f'{html_lib.escape(str(t).replace("_", " ").title())}</span>'
                 for t in themes
             )
             themes_html = f'<div style="margin:8px 0">{theme_tags}</div>'
@@ -128,7 +128,7 @@ def _build_outreach_html(business_name: str, reviews: list) -> str:
 <td style="background:#fff;padding:32px 24px;border-radius:0 0 12px 12px">
 <h1 style="font-size:22px;margin:0 0 12px">Hi there,</h1>
 <p style="color:#6c7a9a;font-size:15px;line-height:1.6;margin:0 0 8px">
-I noticed <strong>{html.escape(business_name)}</strong> has unanswered negative reviews on public review profiles.
+I noticed <strong>{html_lib.escape(business_name)}</strong> has unanswered negative reviews on public review profiles.
 Left unaddressed, bad reviews can cost you potential customers.
 </p>
 <p style="color:#6c7a9a;font-size:15px;line-height:1.6;margin:0 0 16px">
@@ -151,7 +151,7 @@ Here's how <strong>3 of them</strong> could have been handled with AI-generated 
 </div>
 
 <p style="color:#6c7a9a;font-size:14px;margin:16px 0 0">
-Want to see <strong>{html.escape(business_name)}'s</strong> full audit? We can show you every negative review with ready-to-approve responses.
+Want to see <strong>{html_lib.escape(business_name)}'s</strong> full audit? We can show you every negative review with ready-to-approve responses.
 </p>
 
 <div style="text-align:center;margin:24px 0">
