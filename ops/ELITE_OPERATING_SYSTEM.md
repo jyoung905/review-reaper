@@ -103,3 +103,8 @@ Passed locally on port 3012:
   - `/api/audit-requests`
 - Admin dashboard/drafts JS appends the stored admin password for GET requests.
 - Public routes remain public: homepage, `/mini-audit`, report links, onboarding, pricing, checkout.
+
+## Customer fulfillment docs
+- `ops/CUSTOMER_FULFILLMENT_PLAYBOOK.md` defines the manual MVP operating process.
+- `ops/FIRST_RESPONSE_PACK_TEMPLATE.md` is the paid customer deliverable template.
+- `ops/PRE_DOMAIN_READINESS.md` separates completed pre-domain work from James's final domain/email phase.
