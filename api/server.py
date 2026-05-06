@@ -868,7 +868,6 @@ loadDrafts('pending');
                         'quantity': 1,
                     }],
                     mode='subscription',
-                    customer_creation='always',
                     success_url=f"{BASE_URL}/subscribe/success?session_id={{CHECKOUT_SESSION_ID}}",
                     cancel_url=f"{BASE_URL}/subscribe/cancel",
                     metadata={
