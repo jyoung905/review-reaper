@@ -155,8 +155,8 @@ Want to see <strong>{html_lib.escape(business_name)}'s</strong> full audit? We c
 </p>
 
 <div style="text-align:center;margin:24px 0">
-<a href="{BASE_URL}/pricing" style="display:inline-block;padding:14px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">
-Claim Your Free Audit →
+<a href="{BASE_URL}/mini-audit" style="display:inline-block;padding:14px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">
+Request Your Free Mini-Audit →
 </a>
 </div>
 

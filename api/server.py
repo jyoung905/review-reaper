@@ -43,7 +43,10 @@ from src.database import (
     init_db, get_connection, get_stats, list_businesses, get_business,
     get_negative_reviews, get_drafts_by_status, update_draft_status,
     save_audit_request, save_response_draft, add_reviews, add_business,
-    get_audit_requests, get_complaint_themes, get_review
+    get_audit_requests, get_complaint_themes, get_review,
+    save_onboarding_submission, list_onboarding_submissions,
+    save_mini_audit, list_mini_audits, list_customers,
+    save_reply_event, list_reply_events, upsert_customer
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
@@ -96,6 +99,12 @@ class ReaperHandler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def _require_query_auth(self, params):
+        if params.get('password', [''])[0] != ADMIN_PASSWORD:
+            self._send_json({"error": "Unauthorized"}, 401)
+            return False
+        return True
+
     def do_OPTIONS(self):
         self.send_response(200)
         self._set_cors()
@@ -114,6 +123,8 @@ class ReaperHandler(BaseHTTPRequestHandler):
             self._send_html(self._admin_login())
         elif path == '/admin/drafts':
             self._send_html(self._admin_drafts())
+        elif path == '/admin/ops':
+            self._send_html(self._admin_ops())
         elif path == '/health':
             self._send_json({"ok": True, "service": "review-reaper", "ts": datetime.utcnow().isoformat()})
         elif path == '/api/stats':
@@ -127,10 +138,26 @@ class ReaperHandler(BaseHTTPRequestHandler):
             self._send_json(get_drafts_by_status(s))
         elif path == '/api/audit-requests':
             self._send_json(get_audit_requests())
+        elif path == '/api/customers':
+            if self._require_query_auth(params):
+                self._send_json(list_customers())
+        elif path == '/api/onboarding':
+            if self._require_query_auth(params):
+                self._send_json(list_onboarding_submissions(params.get('status', [None])[0]))
+        elif path == '/api/mini-audits':
+            if self._require_query_auth(params):
+                self._send_json(list_mini_audits(params.get('status', [None])[0]))
+        elif path == '/api/replies':
+            if self._require_query_auth(params):
+                self._send_json(list_reply_events(params.get('status', [None])[0]))
         elif path == '/pricing':
             self._send_html(self._pricing_page())
+        elif path == '/mini-audit':
+            self._send_html(self._mini_audit_page())
+        elif path == '/onboarding':
+            self._send_html(self._onboarding_page(params))
         elif path == '/subscribe/success':
-            self._send_html(self._subscription_success())
+            self._send_html(self._subscription_success(params))
         elif path == '/subscribe/cancel':
             self._send_html(self._subscription_cancel())
         else:
@@ -160,6 +187,13 @@ class ReaperHandler(BaseHTTPRequestHandler):
                     self._handle_draft_action(body, 'sent')
             elif path == '/api/create-checkout-session':
                 self._handle_create_checkout_session(body)
+            elif path == '/api/onboarding':
+                self._handle_onboarding(body)
+            elif path == '/api/mini-audit':
+                self._handle_mini_audit(body)
+            elif path == '/api/reply-event':
+                if self._require_auth(body):
+                    self._handle_reply_event(body)
             elif path == '/api/send-outreach':
                 if self._require_auth(body):
                     self._handle_send_outreach(body)
@@ -197,6 +231,79 @@ class ReaperHandler(BaseHTTPRequestHandler):
                     "message": "Request saved. We'll find your business and send the audit."})
         else:
             self._send_json({"success": True, "message": "Request saved."})
+
+    def _handle_mini_audit(self, body):
+        """Capture a free mini-audit request from a prospect."""
+        data = json.loads(body)
+        email = data.get('email', '').strip().lower()
+        business_name = data.get('business_name', '').strip()
+        if not email or not business_name:
+            self._send_error("Email and business name are required")
+            return
+        save_audit_request(business_name, data.get('place_id', '').strip(), email)
+        upsert_customer(email, business_name=business_name, status='lead', source='mini_audit_request')
+        self._send_json({
+            "success": True,
+            "message": "Mini-audit request received. We will prepare review themes and response drafts before pitching a subscription."
+        })
+
+    def _handle_onboarding(self, body):
+        """Capture paid-customer onboarding details."""
+        data = json.loads(body)
+        try:
+            onboarding_id = save_onboarding_submission(data)
+            self._send_json({
+                "success": True,
+                "onboarding_id": onboarding_id,
+                "message": "Onboarding received. First review scan is now queued."
+            })
+        except ValueError as e:
+            self._send_error(str(e))
+
+    def _handle_reply_event(self, body):
+        """Save an inbound prospect reply + draft response for operator review."""
+        data = json.loads(body)
+        inbound = data.get('inbound_text', '').strip()
+        if not inbound:
+            self._send_error("inbound_text is required")
+            return
+        if not data.get('recommended_reply'):
+            data['recommended_reply'] = self._classify_and_draft_reply(data)
+        if not data.get('classification'):
+            data['classification'] = self._classify_reply(inbound)
+        event_id = save_reply_event(data)
+        self._send_json({"success": True, "reply_event_id": event_id})
+
+    def _classify_reply(self, text):
+        t = text.lower()
+        if any(x in t for x in ['unsubscribe', 'stop', 'do not contact', 'remove me']):
+            return 'unsubscribe'
+        if any(x in t for x in ['yes', 'send', 'sure', 'interested', 'audit']):
+            return 'mini_audit_requested'
+        if any(x in t for x in ['price', 'cost', 'how much']):
+            return 'pricing_question'
+        if any(x in t for x in ['angry', 'scam', 'who are you', 'why']):
+            return 'objection'
+        return 'needs_review'
+
+    def _classify_and_draft_reply(self, data):
+        business = data.get('business_name', 'your business') or 'your business'
+        text = data.get('inbound_text', '')
+        c = self._classify_reply(text)
+        if c == 'unsubscribe':
+            return "Understood — sorry for the interruption. I won’t contact you again."
+        if c == 'mini_audit_requested':
+            return (f"Absolutely — I’ll put together a quick mini-audit for {business}.\n\n"
+                    "I’ll include the recent negative review themes I found, 2–3 suggested response drafts, "
+                    "and a short note on what I’d fix first from a reputation standpoint.\n\n"
+                    "I’ll send it over shortly.\n\n— James")
+        if c == 'pricing_question':
+            return ("Ongoing monitoring is $97/month for one location. That includes negative review monitoring, "
+                    "approval-ready response drafts, and a short complaint-theme summary.\n\n"
+                    "But I’d rather send the free mini-audit first so you can judge whether it’s useful.")
+        return ("Fair question. Review Reaper is a simple review-response service for local businesses. "
+                "I monitor public reviews, flag the negative ones, draft professional responses, and summarize recurring complaint themes. "
+                "Nothing gets posted automatically — you approve or edit anything before using it.")
 
     def _handle_login(self, body):
         if self._verify_password(body):
@@ -426,6 +533,7 @@ tr:hover{background:#f8f9ff}
 <div class="nav-bar">
 <a href="/admin" class="active">&#128202; Dashboard</a>
 <a href="/admin/drafts">&#9997; Pending Drafts</a>
+<a href="/admin/ops">&#128188; Ops</a>
 <a href="/" style="margin-left:auto;color:#e94560">&larr; Back to Site</a>
 </div>
 <h1>&#9760; Review Reaper Dashboard</h1>
@@ -466,7 +574,10 @@ document.getElementById('stats').innerHTML=
 '<div class="stat-card"><div class="num">'+(st.negative_reviews||0)+'</div><div class="label">Negative Reviews</div></div>'+
 '<div class="stat-card"><div class="num">'+(st.pending_drafts||0)+'</div><div class="label">Pending Drafts</div></div>'+
 '<div class="stat-card"><div class="num">'+(st.sent_drafts||0)+'</div><div class="label">Responses Sent</div></div>'+
-'<div class="stat-card"><div class="num">'+(st.pending_audits||0)+'</div><div class="label">Audit Requests</div></div>';
+'<div class="stat-card"><div class="num">'+(st.pending_audits||0)+'</div><div class="label">Audit Requests</div></div>'+
+'<div class="stat-card"><div class="num">'+(st.customers||0)+'</div><div class="label">Customers/Leads</div></div>'+
+'<div class="stat-card"><div class="num">'+(st.new_onboarding||0)+'</div><div class="label">New Onboarding</div></div>'+
+'<div class="stat-card"><div class="num">'+(st.reply_drafts||0)+'</div><div class="label">Reply Drafts</div></div>';
 var biz=await api('GET','/api/businesses');
 var bh='';
 if(biz&&biz.length){bh='<table><thead><tr><th>Name</th><th>Type</th><th>Rating</th><th>Negative</th><th>Pending</th></tr></thead><tbody>';
@@ -498,6 +609,25 @@ loadDash();
 </script>
 </body>
 </html>'''
+
+    def _admin_ops(self):
+        return '''<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Review Reaper - Ops</title><style>
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#1a1a2e;margin:0}.main{max-width:1180px;margin:0 auto;padding:32px 24px}.nav-bar{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}.nav-bar a{padding:8px 14px;border-radius:7px;text-decoration:none;font-size:.9rem;font-weight:700;color:#6c7a9a}.nav-bar a:hover,.nav-bar a.active{background:#e94560;color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}.card{background:#fff;border:1px solid #e5e9f3;border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(15,23,42,.05)}h1{margin:0 0 18px}.item{border-top:1px solid #eef2f7;padding:12px 0}.item:first-child{border-top:0}.muted{color:#64748b;font-size:.86rem}.badge{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:999px;padding:3px 8px;font-size:.75rem;font-weight:800}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:.84rem}.empty{color:#64748b;padding:20px 0}.toast{position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 18px;border-radius:8px;display:none}.toast.show{display:block}
+</style></head><body><div class="main"><div class="nav-bar"><a href="/admin">&#128202; Dashboard</a><a href="/admin/drafts">&#9997; Drafts</a><a class="active" href="/admin/ops">&#128188; Ops</a><a href="/mini-audit">Mini-Audit Page</a><a href="/onboarding">Onboarding Page</a><a href="/" style="margin-left:auto;color:#e94560">&larr; Site</a></div><h1>Review Reaper Operating Desk</h1><div class="grid"><div class="card"><h2>Customers / Leads</h2><div id="customers"></div></div><div class="card"><h2>Onboarding Queue</h2><div id="onboarding"></div></div><div class="card"><h2>Mini-Audits</h2><div id="audits"></div></div><div class="card"><h2>Inbound Reply Drafts</h2><div id="replies"></div></div></div></div><div id="toast" class="toast"></div><script>
+var PW=sessionStorage.getItem('rr_pw');if(!PW){var pw=prompt('Admin password:');if(pw){PW=pw;sessionStorage.setItem('rr_pw',pw)}else{window.location.href='/admin/login'}}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+async function api(p){var sep=p.indexOf('?')>=0?'&':'?';var r=await fetch(p+sep+'password='+encodeURIComponent(PW));return r.json()}
+function item(title, meta, body, status){return '<div class="item"><strong>'+esc(title)+'</strong> '+(status?'<span class="badge">'+esc(status)+'</span>':'')+'<div class="muted">'+esc(meta||'')+'</div>'+(body?'<pre>'+esc(body)+'</pre>':'')+'</div>'}
+async function load(){
+var c=await api('/api/customers');customers.innerHTML=c.length?c.map(x=>item(x.business_name||x.email,x.email+' • '+(x.source||''),'',x.status)).join(''):'<div class="empty">No customers yet</div>';
+var o=await api('/api/onboarding');onboarding.innerHTML=o.length?o.map(x=>item(x.business_name,x.customer_email+' • '+x.created_at,'Review profile: '+(x.review_profile_url||'')+'\nTone: '+(x.preferred_tone||''),x.status)).join(''):'<div class="empty">No onboarding submissions</div>';
+var a=await api('/api/mini-audits');audits.innerHTML=a.length?a.map(x=>item(x.business_name,x.prospect_email+' • '+x.created_at,'Themes: '+(x.complaint_themes||''),x.status)).join(''):'<div class="empty">No mini-audits saved</div>';
+var r=await api('/api/replies');replies.innerHTML=r.length?r.map(x=>item(x.business_name||x.contact_email,x.classification+' • '+x.created_at,x.recommended_reply,x.status)).join(''):'<div class="empty">No inbound replies logged</div>';
+}
+load();
+</script></body></html>'''
 
     def _admin_drafts(self):
         return '''<!DOCTYPE html>
@@ -734,6 +864,7 @@ loadDrafts('pending');
                         'quantity': 1,
                     }],
                     mode='subscription',
+                    customer_creation='always',
                     success_url=f"{BASE_URL}/subscribe/success?session_id={{CHECKOUT_SESSION_ID}}",
                     cancel_url=f"{BASE_URL}/subscribe/cancel",
                     metadata={
@@ -778,8 +909,17 @@ loadDrafts('pending');
             if event_type == 'checkout.session.completed':
                 session = event['data']['object']
                 customer_email = session.get('customer_details', {}).get('email', '')
+                customer_id = session.get('customer', '')
                 subscription_id = session.get('subscription', '')
                 print(f"\n🎉 New subscription! Email: {customer_email}, Sub: {subscription_id}")
+                if customer_email:
+                    upsert_customer(
+                        customer_email,
+                        stripe_customer_id=customer_id,
+                        stripe_subscription_id=subscription_id,
+                        status='subscribed',
+                        source='stripe_checkout'
+                    )
                 # Store subscription in settings
                 conn = get_connection()
                 conn.execute(
@@ -864,7 +1004,13 @@ async function startCheckout(){var btn=document.getElementById("subscribe-btn");
 </body>
 </html>'''
 
-    def _subscription_success(self):
+    def _subscription_success(self, params=None):
+        session_id = ''
+        if params:
+            session_id = params.get('session_id', [''])[0]
+        onboarding_url = '/onboarding'
+        if session_id:
+            onboarding_url += '?session_id=' + html.escape(session_id)
         return '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -886,11 +1032,56 @@ p{color:#6c7a9a;margin-bottom:24px;line-height:1.6}
 <div class="card">
 <div class="icon">&#9989;</div>
 <h1>Welcome to Review Reaper!</h1>
-<p>Your subscription is active. You now have full access to AI-powered review management for all your businesses.</p>
-<a href="/admin" class="btn">Go to Dashboard &rarr;</a>
+<p>Your subscription is active. Next we need your business profile, review link, approval email, and preferred response tone so the first scan can be set up properly.</p>
+<a href="''' + onboarding_url + '''" class="btn">Complete Onboarding &rarr;</a>
 </div>
 </body>
 </html>'''
+
+    def _mini_audit_page(self):
+        return '''<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Free Review Mini-Audit - Review Reaper</title>
+<style>
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#1a1a2e;margin:0;line-height:1.6}.wrap{max-width:880px;margin:0 auto;padding:48px 24px}.card{background:#fff;border-radius:18px;padding:34px;box-shadow:0 18px 55px rgba(15,23,42,.08);border:1px solid #e9ecf5}.eyebrow{color:#e94560;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem}h1{font-size:2.4rem;line-height:1.08;margin:10px 0 14px}.sub{color:#5f6f8c;max-width:720px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:26px 0}.box{background:#f8f9ff;border:1px solid #e7eaf4;border-radius:14px;padding:18px}.box strong{display:block;margin-bottom:6px}form{display:grid;gap:14px;margin-top:24px}input,textarea,select{width:100%;padding:14px;border-radius:10px;border:1px solid #dbe1ee;font:inherit}button{padding:15px 22px;border:0;border-radius:10px;background:#e94560;color:#fff;font-weight:800;cursor:pointer}.fine{color:#7a869f;font-size:.85rem}@media(max-width:720px){.grid{grid-template-columns:1fr}h1{font-size:2rem}}
+</style></head><body><div class="wrap"><div class="card">
+<div class="eyebrow">Free before paid</div><h1>See what your bad reviews are costing you before you subscribe.</h1>
+<p class="sub">Review Reaper starts with a mini-audit: negative review themes, 2–3 response drafts, and the first reputation fix I would make. No card required for this step.</p>
+<div class="grid"><div class="box"><strong>What you get</strong>Review snippets, complaint themes, professional response drafts, and recovery suggestions.</div><div class="box"><strong>What you do not get</strong>No auto-posting, no fake reviews, no public action without approval.</div></div>
+<form onsubmit="return submitMiniAudit(event)">
+<input id="business_name" placeholder="Business name" required>
+<input id="email" type="email" placeholder="Where should we send the mini-audit?" required>
+<input id="website" placeholder="Website or review profile URL (optional)">
+<textarea id="notes" placeholder="Anything specific you want checked? (optional)" rows="4"></textarea>
+<button id="btn" type="submit">Request Free Mini-Audit</button><p class="fine">If it looks useful, ongoing monitoring is $97/month after the free audit.</p>
+</form></div></div><script>
+async function submitMiniAudit(e){e.preventDefault();var b=document.getElementById('btn');b.disabled=true;b.textContent='Submitting...';var body={business_name:business_name.value,email:email.value,website:website.value,notes:notes.value};try{var r=await fetch('/api/mini-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json();if(d.success){document.querySelector('form').innerHTML='<h2>Request received.</h2><p>We will prepare the mini-audit before asking you to pay for anything.</p>'}else{alert(d.error||'Something went wrong');b.disabled=false;b.textContent='Request Free Mini-Audit'}}catch(err){alert(err.message);b.disabled=false;b.textContent='Request Free Mini-Audit'}return false}
+</script></body></html>'''
+
+    def _onboarding_page(self, params=None):
+        session_id = html.escape(params.get('session_id', [''])[0]) if params else ''
+        return f'''<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Review Reaper Onboarding</title><style>
+*{{box-sizing:border-box}}body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8f9ff;color:#1a1a2e;margin:0;line-height:1.55}}.wrap{{max-width:920px;margin:0 auto;padding:44px 24px}}.card{{background:#fff;border-radius:18px;padding:34px;box-shadow:0 18px 55px rgba(15,23,42,.08);border:1px solid #e9ecf5}}h1{{font-size:2.2rem;margin:0 0 10px}}p{{color:#5f6f8c}}form{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}}.full{{grid-column:1/-1}}input,textarea,select{{width:100%;padding:13px;border-radius:10px;border:1px solid #dbe1ee;font:inherit}}label{{font-size:.85rem;font-weight:700;color:#334155}}button{{grid-column:1/-1;padding:15px 22px;border:0;border-radius:10px;background:#e94560;color:#fff;font-weight:800;cursor:pointer}}.note{{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:18px}}@media(max-width:720px){{form{{grid-template-columns:1fr}}}}
+</style></head><body><div class="wrap"><div class="card"><h1>Set up your Review Reaper service</h1><p>We do not throw you into a dashboard. Send these details and we’ll prepare your first review scan and response pack.</p><div class="note">Customer promise: approval-ready drafts only. Nothing is posted automatically.</div>
+<form onsubmit="return submitOnboarding(event)">
+<input type="hidden" id="session_id" value="{session_id}">
+<div><label>Business name</label><input id="business_name" required></div>
+<div><label>Contact name</label><input id="contact_name"></div>
+<div><label>Your email</label><input id="customer_email" type="email" required></div>
+<div><label>Approval email</label><input id="approval_email" type="email" placeholder="Where should drafts go?"></div>
+<div><label>City/location</label><input id="city"></div>
+<div><label>Website</label><input id="website"></div>
+<div class="full"><label>Google Business / review profile URL</label><input id="review_profile_url" placeholder="Paste your Google profile, Birdeye, Yelp, etc."></div>
+<div><label>Google Place ID if known</label><input id="place_id"></div>
+<div><label>Preferred response tone</label><select id="preferred_tone"><option>professional</option><option>warm</option><option>direct</option><option>apologetic</option><option>premium / polished</option></select></div>
+<div class="full"><label>Anything we should avoid admitting or saying?</label><textarea id="liability_notes" rows="3" placeholder="Example: do not admit fault, refund policy limits, legal/compliance notes"></textarea></div>
+<div class="full"><label>Service notes</label><textarea id="service_notes" rows="3" placeholder="Known issues, common complaints, manager contact, preferred escalation path"></textarea></div>
+<button id="btn" type="submit">Submit Onboarding</button>
+</form></div></div><script>
+async function submitOnboarding(e){{e.preventDefault();var b=document.getElementById('btn');b.disabled=true;b.textContent='Submitting...';var ids=['session_id','business_name','contact_name','customer_email','approval_email','city','website','review_profile_url','place_id','preferred_tone','liability_notes','service_notes'];var body={{}};ids.forEach(function(id){{body[id]=document.getElementById(id).value}});try{{var r=await fetch('/api/onboarding',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(body)}}),d=await r.json();if(d.success){{document.querySelector('form').innerHTML='<h2>Onboarding received.</h2><p>Your first review scan is queued. We will send the first response pack after setup.</p>'}}else{{alert(d.error||'Something went wrong');b.disabled=false;b.textContent='Submit Onboarding'}}}}catch(err){{alert(err.message);b.disabled=false;b.textContent='Submit Onboarding'}}return false}}
+</script></body></html>'''
 
     def _subscription_cancel(self):
         return '''<!DOCTYPE html>

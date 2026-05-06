@@ -74,3 +74,14 @@
   - `ops/ONBOARDING_AND_FULFILLMENT.md`
 - New strategy: cold email should offer a free mini-audit first, not push straight to monthly subscription.
 - If existing recipients reply, draft/helpful responses should be prepared; do not send externally without James approval unless explicitly delegated.
+
+## Elite operating business build started
+- James approved building Review Reaper end-to-end as a real operating business before further outbound.
+- Built `/mini-audit` free-audit front door.
+- Built `/onboarding` paid-customer onboarding flow.
+- Reworked `/subscribe/success` to route customers into onboarding instead of the admin dashboard.
+- Built `/admin/ops` operating desk for leads, onboarding, mini-audits, and reply drafts.
+- Added database tables/functions for customers, onboarding submissions, mini-audits, and inbound reply events.
+- Added public/admin APIs for mini-audit requests, onboarding, reply event drafting, and operating queue views.
+- Changed outreach email CTA from `/pricing` to `/mini-audit` so future outreach offers value before subscription.
+- Local verification passed for pages and APIs.

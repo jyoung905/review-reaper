@@ -80,6 +80,68 @@ def init_db():
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            business_name TEXT,
+            contact_name TEXT,
+            stripe_customer_id TEXT,
+            stripe_subscription_id TEXT,
+            status TEXT DEFAULT 'lead',
+                -- lead, subscribed, onboarding_submitted, active, paused, canceled
+            source TEXT DEFAULT 'unknown',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS onboarding_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_email TEXT NOT NULL,
+            business_name TEXT NOT NULL,
+            contact_name TEXT,
+            website TEXT,
+            city TEXT,
+            review_profile_url TEXT,
+            place_id TEXT,
+            approval_email TEXT,
+            preferred_tone TEXT,
+            liability_notes TEXT,
+            service_notes TEXT,
+            status TEXT DEFAULT 'new',
+                -- new, setup_started, first_scan_ready, active
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS mini_audits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prospect_email TEXT NOT NULL,
+            business_name TEXT NOT NULL,
+            website TEXT,
+            review_profile_url TEXT,
+            public_rating TEXT,
+            review_count TEXT,
+            bad_review_examples TEXT,
+            complaint_themes TEXT,
+            response_drafts TEXT,
+            recommendation TEXT,
+            status TEXT DEFAULT 'draft',
+                -- draft, sent, won, lost
+            created_at TEXT DEFAULT (datetime('now')),
+            sent_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS reply_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            business_name TEXT,
+            contact_email TEXT,
+            inbound_text TEXT,
+            classification TEXT,
+            recommended_reply TEXT,
+            status TEXT DEFAULT 'draft',
+                -- draft, approved, sent, closed
+            created_at TEXT DEFAULT (datetime('now'))
+        );
     """)
     
     conn.commit()
@@ -302,6 +364,18 @@ def get_stats():
             "pending_audits": conn.execute(
                 "SELECT COUNT(*) FROM audit_requests WHERE status='pending'"
             ).fetchone()[0],
+            "customers": conn.execute(
+                "SELECT COUNT(*) FROM customers"
+            ).fetchone()[0],
+            "new_onboarding": conn.execute(
+                "SELECT COUNT(*) FROM onboarding_submissions WHERE status='new'"
+            ).fetchone()[0],
+            "mini_audits": conn.execute(
+                "SELECT COUNT(*) FROM mini_audits"
+            ).fetchone()[0],
+            "reply_drafts": conn.execute(
+                "SELECT COUNT(*) FROM reply_events WHERE status='draft'"
+            ).fetchone()[0],
         }
         return stats
     finally:
@@ -331,6 +405,183 @@ def get_audit_requests():
         rows = conn.execute("""
             SELECT * FROM audit_requests ORDER BY created_at DESC
         """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+# ─── Customers / Onboarding / Mini-Audits ────────────────────────────────
+
+def upsert_customer(email, business_name=None, contact_name=None,
+                    stripe_customer_id=None, stripe_subscription_id=None,
+                    status=None, source="unknown"):
+    """Create/update a customer or lead record by email."""
+    conn = get_connection()
+    try:
+        conn.execute("""
+            INSERT INTO customers
+                (email, business_name, contact_name, stripe_customer_id,
+                 stripe_subscription_id, status, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(email) DO UPDATE SET
+                business_name=COALESCE(excluded.business_name, customers.business_name),
+                contact_name=COALESCE(excluded.contact_name, customers.contact_name),
+                stripe_customer_id=COALESCE(excluded.stripe_customer_id, customers.stripe_customer_id),
+                stripe_subscription_id=COALESCE(excluded.stripe_subscription_id, customers.stripe_subscription_id),
+                status=COALESCE(excluded.status, customers.status),
+                source=COALESCE(excluded.source, customers.source),
+                updated_at=datetime('now')
+        """, (email, business_name, contact_name, stripe_customer_id,
+              stripe_subscription_id, status or "lead", source))
+        conn.commit()
+        row = conn.execute("SELECT id FROM customers WHERE email=?", (email,)).fetchone()
+        return row["id"] if row else None
+    finally:
+        conn.close()
+
+
+def save_onboarding_submission(data):
+    """Save customer onboarding details and upsert the customer."""
+    email = (data.get("customer_email") or data.get("email") or "").strip().lower()
+    business_name = (data.get("business_name") or "").strip()
+    if not email or not business_name:
+        raise ValueError("customer_email and business_name are required")
+    conn = get_connection()
+    try:
+        conn.execute("""
+            INSERT INTO onboarding_submissions
+                (customer_email, business_name, contact_name, website, city,
+                 review_profile_url, place_id, approval_email, preferred_tone,
+                 liability_notes, service_notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            email,
+            business_name,
+            data.get("contact_name", "").strip(),
+            data.get("website", "").strip(),
+            data.get("city", "").strip(),
+            data.get("review_profile_url", "").strip(),
+            data.get("place_id", "").strip(),
+            (data.get("approval_email") or email).strip().lower(),
+            data.get("preferred_tone", "professional").strip(),
+            data.get("liability_notes", "").strip(),
+            data.get("service_notes", "").strip(),
+        ))
+        conn.commit()
+        onboarding_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    finally:
+        conn.close()
+    upsert_customer(email, business_name=business_name,
+                    contact_name=data.get("contact_name", "").strip(),
+                    status="onboarding_submitted", source="onboarding")
+    return onboarding_id
+
+
+def list_onboarding_submissions(status=None):
+    conn = get_connection()
+    try:
+        where = "WHERE status=?" if status else ""
+        rows = conn.execute(f"""
+            SELECT * FROM onboarding_submissions
+            {where}
+            ORDER BY created_at DESC
+        """, (status,) if status else ()).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def save_mini_audit(data):
+    """Save a mini-audit draft or sent report."""
+    email = (data.get("prospect_email") or data.get("email") or "").strip().lower()
+    business_name = (data.get("business_name") or "").strip()
+    if not email or not business_name:
+        raise ValueError("prospect_email and business_name are required")
+    conn = get_connection()
+    try:
+        conn.execute("""
+            INSERT INTO mini_audits
+                (prospect_email, business_name, website, review_profile_url,
+                 public_rating, review_count, bad_review_examples,
+                 complaint_themes, response_drafts, recommendation, status, sent_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            email,
+            business_name,
+            data.get("website", "").strip(),
+            data.get("review_profile_url", "").strip(),
+            data.get("public_rating", "").strip(),
+            data.get("review_count", "").strip(),
+            json.dumps(data.get("bad_review_examples", [])),
+            json.dumps(data.get("complaint_themes", [])),
+            json.dumps(data.get("response_drafts", [])),
+            data.get("recommendation", "").strip(),
+            data.get("status", "draft"),
+            datetime.utcnow().isoformat() if data.get("status") == "sent" else None,
+        ))
+        conn.commit()
+        audit_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    finally:
+        conn.close()
+    upsert_customer(email, business_name=business_name, status="lead", source="mini_audit")
+    return audit_id
+
+
+def list_mini_audits(status=None):
+    conn = get_connection()
+    try:
+        where = "WHERE status=?" if status else ""
+        rows = conn.execute(f"""
+            SELECT * FROM mini_audits
+            {where}
+            ORDER BY created_at DESC
+        """, (status,) if status else ()).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def list_customers():
+    conn = get_connection()
+    try:
+        rows = conn.execute("""
+            SELECT * FROM customers ORDER BY updated_at DESC, created_at DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def save_reply_event(data):
+    """Save an inbound reply and recommended response draft."""
+    conn = get_connection()
+    try:
+        conn.execute("""
+            INSERT INTO reply_events
+                (business_name, contact_email, inbound_text, classification, recommended_reply)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            data.get("business_name", "").strip(),
+            data.get("contact_email", "").strip().lower(),
+            data.get("inbound_text", "").strip(),
+            data.get("classification", "needs_review").strip(),
+            data.get("recommended_reply", "").strip(),
+        ))
+        conn.commit()
+        return conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    finally:
+        conn.close()
+
+
+def list_reply_events(status=None):
+    conn = get_connection()
+    try:
+        where = "WHERE status=?" if status else ""
+        rows = conn.execute(f"""
+            SELECT * FROM reply_events
+            {where}
+            ORDER BY created_at DESC
+        """, (status,) if status else ()).fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()
