@@ -51,7 +51,10 @@ from src.database import (
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
-from src.email_sender import send_outreach_email
+from src.email_sender import (
+    send_outreach_email, send_admin_notification,
+    send_mini_audit_confirmation, send_onboarding_confirmation
+)
 
 
 class ReaperHandler(BaseHTTPRequestHandler):
@@ -256,6 +259,11 @@ class ReaperHandler(BaseHTTPRequestHandler):
             "status": "requested"
         })
         upsert_customer(email, business_name=business_name, status='lead', source='mini_audit_request')
+        send_mini_audit_confirmation(email, business_name)
+        send_admin_notification(
+            f"New Review Reaper mini-audit request: {business_name}",
+            f"Business: {business_name}\nEmail: {email}\nWebsite/profile: {data.get('website', '').strip()}\nNotes: {data.get('notes', '').strip()}\nMini-audit ID: {audit_id}"
+        )
         self._send_json({
             "success": True,
             "mini_audit_id": audit_id,
@@ -267,6 +275,14 @@ class ReaperHandler(BaseHTTPRequestHandler):
         data = json.loads(body)
         try:
             onboarding_id = save_onboarding_submission(data)
+            email = (data.get('customer_email') or data.get('email') or '').strip().lower()
+            business_name = data.get('business_name', '').strip()
+            if email and business_name:
+                send_onboarding_confirmation(email, business_name)
+                send_admin_notification(
+                    f"New Review Reaper onboarding: {business_name}",
+                    f"Business: {business_name}\nCustomer: {email}\nApproval email: {data.get('approval_email', '')}\nReview profile: {data.get('review_profile_url', '')}\nTone: {data.get('preferred_tone', '')}\nOnboarding ID: {onboarding_id}"
+                )
             self._send_json({
                 "success": True,
                 "onboarding_id": onboarding_id,

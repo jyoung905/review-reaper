@@ -90,3 +90,9 @@
 - Added `/mini-audit/report?id=<id>` for customer-facing mini-audit reports.
 - Public `/api/mini-audit` now creates a `mini_audits` queue record and returns `mini_audit_id`.
 - Local verification passed: mini-audit request creates record and report page renders.
+
+## Transactional notifications added
+- Added SendGrid transactional helper functions.
+- `/api/mini-audit` now sends customer confirmation + admin notification when configured.
+- `/api/onboarding` now sends customer confirmation + admin notification when configured.
+- Example/test recipients are skipped to avoid accidental QA sends.

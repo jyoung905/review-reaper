@@ -53,3 +53,8 @@ Review Reaper does not auto-post responses. It delivers approval-ready review re
 - `/mini-audit/report?id=<id>` renders a customer-facing mini-audit report.
 - New `/api/mini-audit` requests now also create a `mini_audits` queue record and return `mini_audit_id`.
 - Reports show verified bad-review examples, complaint themes, response drafts, recommendation, and CTA to monthly monitoring.
+
+## Transactional notification layer
+- Mini-audit requests send customer confirmation and admin notification when SendGrid is configured.
+- Onboarding submissions send customer confirmation and admin notification when SendGrid is configured.
+- QA/example recipients are skipped to avoid accidental test sends.

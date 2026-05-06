@@ -16,6 +16,7 @@ SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "reviewreaper.biz@gmail.com")
 FROM_NAME = os.getenv("FROM_NAME", "Review Reaper")
 BASE_URL = os.getenv("BASE_URL", "https://review-reaper-production.up.railway.app").rstrip('/')
+ADMIN_NOTIFY_EMAIL = os.getenv("ADMIN_NOTIFY_EMAIL", FROM_EMAIL)
 
 
 def send_outreach_email(recipient_email: str, business_name: str, reviews: list) -> dict:
@@ -56,6 +57,61 @@ def send_outreach_email(recipient_email: str, business_name: str, reviews: list)
         }
     except Exception as e:
         return {"success": False, "message": f"SendGrid error: {str(e)}"}
+
+
+def send_transactional_email(recipient_email: str, subject: str, html_body: str) -> dict:
+    """Send a transactional/service email. Skips obvious QA addresses."""
+    if recipient_email.endswith("@example.com") or "ops-test" in recipient_email:
+        return {"success": True, "skipped": True, "message": "Skipped QA/test recipient"}
+    if not SENDGRID_API_KEY or SENDGRID_API_KEY == "your_sendgrid_api_key_here":
+        return {"success": False, "message": "SENDGRID_API_KEY not configured"}
+    message = Mail(
+        from_email=From(FROM_EMAIL, FROM_NAME),
+        to_emails=To(recipient_email),
+        subject=Subject(subject),
+        html_content=HtmlContent(html_body),
+    )
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        return {"success": True, "status_code": response.status_code, "message": f"Email sent to {recipient_email} (status {response.status_code})"}
+    except Exception as e:
+        return {"success": False, "message": f"SendGrid error: {str(e)}"}
+
+
+def send_admin_notification(subject: str, body: str) -> dict:
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a2e">
+      <h2>{html_lib.escape(subject)}</h2>
+      <pre style="white-space:pre-wrap;background:#f8f9ff;border:1px solid #e2e8f0;border-radius:8px;padding:14px">{html_lib.escape(body)}</pre>
+      <p><a href="{BASE_URL}/admin/ops" style="display:inline-block;background:#e94560;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Open Review Reaper Ops</a></p>
+    </div>
+    """
+    return send_transactional_email(ADMIN_NOTIFY_EMAIL, subject, html_body)
+
+
+def send_mini_audit_confirmation(recipient_email: str, business_name: str) -> dict:
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a2e">
+      <h2>We received your Review Reaper mini-audit request</h2>
+      <p>Thanks — we’ll review public reputation signals for <strong>{html_lib.escape(business_name)}</strong> and prepare a short mini-audit before asking you to subscribe.</p>
+      <p>The audit focuses on negative review themes, suggested response drafts, and the first reputation fix we would make.</p>
+      <p>Nothing is posted publicly. This is a private review.</p>
+    </div>
+    """
+    return send_transactional_email(recipient_email, "We received your Review Reaper mini-audit request", html_body)
+
+
+def send_onboarding_confirmation(recipient_email: str, business_name: str) -> dict:
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a2e">
+      <h2>Your Review Reaper onboarding is received</h2>
+      <p>We received the setup details for <strong>{html_lib.escape(business_name)}</strong>.</p>
+      <p>Next step: we’ll prepare your first review scan and response pack. You’ll approve or edit anything before it is used publicly.</p>
+      <p>Review Reaper does not auto-post responses.</p>
+    </div>
+    """
+    return send_transactional_email(recipient_email, "Your Review Reaper onboarding is received", html_body)
 
 
 def _build_outreach_html(business_name: str, reviews: list) -> str:
