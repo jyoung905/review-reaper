@@ -114,6 +114,19 @@ def send_onboarding_confirmation(recipient_email: str, business_name: str) -> di
     return send_transactional_email(recipient_email, "Your Review Reaper onboarding is received", html_body)
 
 
+def send_mini_audit_report(recipient_email: str, business_name: str, report_url: str) -> dict:
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a2e">
+      <h2>Your Review Reaper mini-audit is ready</h2>
+      <p>I prepared the mini-audit for <strong>{html_lib.escape(business_name)}</strong>.</p>
+      <p>It includes the bad-review themes, example response drafts, and the first reputation fix I would make.</p>
+      <p><a href="{html_lib.escape(report_url)}" style="display:inline-block;background:#e94560;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">View mini-audit</a></p>
+      <p style="color:#64748b;font-size:13px">Nothing is posted automatically. If you want ongoing monitoring, Review Reaper is $97/month after you review the audit.</p>
+    </div>
+    """
+    return send_transactional_email(recipient_email, f"Your Review Reaper mini-audit for {business_name}", html_body)
+
+
 def _build_outreach_html(business_name: str, reviews: list) -> str:
     """Build a simple HTML email body for outreach."""
     review_cards = ""

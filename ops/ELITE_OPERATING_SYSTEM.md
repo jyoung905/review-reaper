@@ -58,3 +58,9 @@ Review Reaper does not auto-post responses. It delivers approval-ready review re
 - Mini-audit requests send customer confirmation and admin notification when SendGrid is configured.
 - Onboarding submissions send customer confirmation and admin notification when SendGrid is configured.
 - QA/example recipients are skipped to avoid accidental test sends.
+
+## Fulfillment tooling
+- `ops/create_mini_audit_from_target.py "Business Name"` builds a mini-audit payload from verified target evidence.
+- Add `--save` to save it through `/api/admin/mini-audit/save` and receive a customer-facing report URL.
+- Admin can mark a mini-audit sent through `/api/admin/mini-audit/mark-sent`, which sends the report email and updates status.
+- `/admin/ops` shows report URLs for saved mini-audits.

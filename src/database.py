@@ -550,6 +550,34 @@ def get_mini_audit(audit_id):
         conn.close()
 
 
+def update_mini_audit(audit_id, data):
+    """Update an existing mini-audit report."""
+    fields = {
+        "website": data.get("website"),
+        "review_profile_url": data.get("review_profile_url"),
+        "public_rating": data.get("public_rating"),
+        "review_count": data.get("review_count"),
+        "bad_review_examples": json.dumps(data.get("bad_review_examples", [])) if "bad_review_examples" in data else None,
+        "complaint_themes": json.dumps(data.get("complaint_themes", [])) if "complaint_themes" in data else None,
+        "response_drafts": json.dumps(data.get("response_drafts", [])) if "response_drafts" in data else None,
+        "recommendation": data.get("recommendation"),
+        "status": data.get("status"),
+        "sent_at": datetime.utcnow().isoformat() if data.get("status") == "sent" else data.get("sent_at"),
+    }
+    updates = [(k, v) for k, v in fields.items() if v is not None]
+    if not updates:
+        return False
+    conn = get_connection()
+    try:
+        set_clause = ", ".join(f"{k}=?" for k, _ in updates)
+        values = [v for _, v in updates] + [audit_id]
+        conn.execute(f"UPDATE mini_audits SET {set_clause} WHERE id=?", values)
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
 def list_customers():
     conn = get_connection()
     try:

@@ -96,3 +96,11 @@
 - `/api/mini-audit` now sends customer confirmation + admin notification when configured.
 - `/api/onboarding` now sends customer confirmation + admin notification when configured.
 - Example/test recipients are skipped to avoid accidental QA sends.
+
+## Fulfillment tooling added
+- Added admin API to save/update mini-audit reports: `/api/admin/mini-audit/save`.
+- Added admin API to send/mark report sent: `/api/admin/mini-audit/mark-sent`.
+- Added `ops/create_mini_audit_from_target.py` to convert verified target evidence into a polished mini-audit report payload.
+- Added mini-audit report email delivery helper.
+- `/admin/ops` now exposes saved report URLs in the mini-audit queue.
+- Local verification passed: generated Dupont Auto Repair mini-audit from target CSV, saved it through API, rendered report, and exercised mark-sent path with QA-safe skipped email.

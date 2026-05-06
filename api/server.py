@@ -47,13 +47,14 @@ from src.database import (
     save_onboarding_submission, list_onboarding_submissions,
     save_mini_audit, list_mini_audits, list_customers,
     save_reply_event, list_reply_events, upsert_customer,
-    delete_test_records, get_mini_audit
+    delete_test_records, get_mini_audit, update_mini_audit
 )
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
 from src.email_sender import (
     send_outreach_email, send_admin_notification,
-    send_mini_audit_confirmation, send_onboarding_confirmation
+    send_mini_audit_confirmation, send_onboarding_confirmation,
+    send_mini_audit_report
 )
 
 
@@ -203,6 +204,12 @@ class ReaperHandler(BaseHTTPRequestHandler):
             elif path == '/api/admin/delete-test-records':
                 if self._require_auth(body):
                     self._send_json({"success": True, "deleted": delete_test_records()})
+            elif path == '/api/admin/mini-audit/save':
+                if self._require_auth(body):
+                    self._handle_admin_save_mini_audit(body)
+            elif path == '/api/admin/mini-audit/mark-sent':
+                if self._require_auth(body):
+                    self._handle_admin_mark_mini_audit_sent(body)
             elif path == '/api/send-outreach':
                 if self._require_auth(body):
                     self._handle_send_outreach(body)
@@ -304,6 +311,36 @@ class ReaperHandler(BaseHTTPRequestHandler):
             data['classification'] = self._classify_reply(inbound)
         event_id = save_reply_event(data)
         self._send_json({"success": True, "reply_event_id": event_id})
+
+    def _handle_admin_save_mini_audit(self, body):
+        data = json.loads(body)
+        audit_id = data.get('id') or data.get('mini_audit_id')
+        if audit_id:
+            update_mini_audit(int(audit_id), data)
+        else:
+            audit_id = save_mini_audit(data)
+        self._send_json({
+            "success": True,
+            "mini_audit_id": audit_id,
+            "report_url": f"{BASE_URL}/mini-audit/report?id={audit_id}"
+        })
+
+    def _handle_admin_mark_mini_audit_sent(self, body):
+        data = json.loads(body)
+        audit_id = data.get('id') or data.get('mini_audit_id')
+        if not audit_id:
+            self._send_error("mini_audit_id is required")
+            return
+        audit = get_mini_audit(int(audit_id))
+        if not audit:
+            self._send_error("mini-audit not found", 404)
+            return
+        report_url = f"{BASE_URL}/mini-audit/report?id={int(audit_id)}"
+        email_result = send_mini_audit_report(
+            audit.get('prospect_email', ''), audit.get('business_name', 'your business'), report_url
+        )
+        update_mini_audit(int(audit_id), {"status": "sent"})
+        self._send_json({"success": True, "mini_audit_id": int(audit_id), "status": "sent", "email": email_result})
 
     def _classify_reply(self, text):
         t = text.lower()
@@ -654,7 +691,7 @@ function item(title, meta, body, status){return '<div class="item"><strong>'+esc
 async function load(){
 var c=await api('/api/customers');customers.innerHTML=c.length?c.map(x=>item(x.business_name||x.email,x.email+' • '+(x.source||''),'',x.status)).join(''):'<div class="empty">No customers yet</div>';
 var o=await api('/api/onboarding');onboarding.innerHTML=o.length?o.map(x=>item(x.business_name,x.customer_email+' • '+x.created_at,'Review profile: '+(x.review_profile_url||'')+'\nTone: '+(x.preferred_tone||''),x.status)).join(''):'<div class="empty">No onboarding submissions</div>';
-var a=await api('/api/mini-audits');audits.innerHTML=a.length?a.map(x=>item(x.business_name,x.prospect_email+' • '+x.created_at,'Themes: '+(x.complaint_themes||''),x.status)).join(''):'<div class="empty">No mini-audits saved</div>';
+var a=await api('/api/mini-audits');audits.innerHTML=a.length?a.map(x=>item(x.business_name,x.prospect_email+' • '+x.created_at,'Report: '+location.origin+'/mini-audit/report?id='+x.id+'\nThemes: '+(x.complaint_themes||'')+'\nRecommendation: '+(x.recommendation||''),x.status)).join(''):'<div class="empty">No mini-audits saved</div>';
 var r=await api('/api/replies');replies.innerHTML=r.length?r.map(x=>item(x.business_name||x.contact_email,x.classification+' • '+x.created_at,x.recommended_reply,x.status)).join(''):'<div class="empty">No inbound replies logged</div>';
 }
 load();
