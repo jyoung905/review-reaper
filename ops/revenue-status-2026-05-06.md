@@ -134,3 +134,10 @@
   - `/api/audit-requests`
 - Updated admin dashboard and drafts page GET helpers to include password auth.
 - Local verification passed: unauthenticated requests return 401; authenticated requests return 200.
+
+## Prospecting expansion started
+- James correctly asked why Review Reaper is GTA-limited; answer: it is not. GTA was only the sandbox.
+- Created `ops/PROSPECTING_PLAYBOOK.md`.
+- New target model: niche-first across Canada/US, starting with dental, med spas, and auto repair.
+- Qualification criteria: 4.0–4.7 rating, enough reviews, visible recent 1–3 star review pain, verified website/contact route, high customer LTV, weak/no owner responses.
+- Outreach remains approval-gated. No external sends without James approval.
