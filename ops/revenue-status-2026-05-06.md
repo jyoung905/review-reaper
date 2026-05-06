@@ -141,3 +141,9 @@
 - New target model: niche-first across Canada/US, starting with dental, med spas, and auto repair.
 - Qualification criteria: 4.0–4.7 rating, enough reviews, visible recent 1–3 star review pain, verified website/contact route, high customer LTV, weak/no owner responses.
 - Outreach remains approval-gated. No external sends without James approval.
+
+## Prospecting candidates started
+- Created `ops/prospecting-candidates-2026-05-06.csv` with first researched candidates.
+- Strongest early candidate from manual evidence: BellaBody PostOperative MedSpa, because public review evidence shows refund/package and communication complaints.
+- Other candidates require exact low-star review evidence/contact verification before any outreach.
+- Subagents are still researching dental, med spa, and auto repair lists in parallel.
