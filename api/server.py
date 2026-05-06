@@ -53,7 +53,7 @@ from src.database import (
 from src.scraper import scrape_and_analyze, find_place_id
 from src.response_generator import generate_all_responses
 from src.email_sender import (
-    send_outreach_email, send_admin_notification,
+    send_outreach_email, send_soft_outreach_email, send_admin_notification,
     send_mini_audit_confirmation, send_onboarding_confirmation,
     send_mini_audit_report
 )
@@ -224,6 +224,9 @@ class ReaperHandler(BaseHTTPRequestHandler):
             elif path == '/api/send-outreach':
                 if self._require_auth(body):
                     self._handle_send_outreach(body)
+            elif path == '/api/send-soft-outreach':
+                if self._require_auth(body):
+                    self._handle_send_soft_outreach(body)
             elif path == '/api/scrape-businesses':
                 if self._require_auth(body):
                     self._handle_scrape_businesses(body)
@@ -871,6 +874,33 @@ loadDrafts('pending');
 
             if result.get("success"):
                 print(f"\n✉️  Outreach email sent to {recipient_email} for {business_name}")
+                self._send_json(result)
+            else:
+                self._send_error(result.get("message", "Failed to send email"), 500)
+        except json.JSONDecodeError:
+            self._send_error("Invalid JSON body")
+        except Exception as e:
+            self._send_error(str(e), 500)
+
+    def _handle_send_soft_outreach(self, body):
+        """Send softer mini-audit-first outreach via SendGrid."""
+        try:
+            data = json.loads(body)
+            recipient_email = data.get('recipient_email', '').strip()
+            business_name = data.get('business_name', '').strip()
+            pain_angle = data.get('pain_angle', '').strip()
+            if not recipient_email:
+                self._send_error("recipient_email is required")
+                return
+            if not business_name:
+                self._send_error("business_name is required")
+                return
+            if not pain_angle:
+                self._send_error("pain_angle is required")
+                return
+            result = send_soft_outreach_email(recipient_email, business_name, pain_angle)
+            if result.get("success"):
+                print(f"\n✉️  Soft outreach email sent to {recipient_email} for {business_name}")
                 self._send_json(result)
             else:
                 self._send_error(result.get("message", "Failed to send email"), 500)

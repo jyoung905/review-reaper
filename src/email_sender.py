@@ -59,6 +59,37 @@ def send_outreach_email(recipient_email: str, business_name: str, reviews: list)
         return {"success": False, "message": f"SendGrid error: {str(e)}"}
 
 
+def send_soft_outreach_email(recipient_email: str, business_name: str, pain_angle: str) -> dict:
+    """Send softer mini-audit-first outreach without quoting exact reviews."""
+    if not SENDGRID_API_KEY or SENDGRID_API_KEY == "your_sendgrid_api_key_here":
+        return {"success": False, "message": "SENDGRID_API_KEY not configured"}
+    safe_business = html_lib.escape(business_name)
+    safe_pain = html_lib.escape(pain_angle)
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1f2937;max-width:620px">
+      <p>Hi {safe_business} team,</p>
+      <p>I was looking at {safe_business} and noticed a few public review patterns around <strong>{safe_pain}</strong>.</p>
+      <p>I run Review Reaper. We do a free mini-audit first: the negative review themes, 2–3 professional response drafts, and the first reputation fix I would make. No login or card needed.</p>
+      <p>If useful, I can send over the mini-audit for {safe_business}. It is $97/month if you want ongoing monitoring after that, but the mini-audit is free.</p>
+      <p>Worth sending it over?</p>
+      <p>— James<br>Review Reaper<br><a href="{BASE_URL}">{BASE_URL}</a></p>
+      <p style="font-size:12px;color:#6b7280;margin-top:28px">If you’d rather not receive this, reply “unsubscribe” and I won’t follow up.</p>
+    </div>
+    """
+    message = Mail(
+        from_email=From(FROM_EMAIL, FROM_NAME),
+        to_emails=To(recipient_email),
+        subject=Subject(f"Quick review mini-audit for {business_name}"),
+        html_content=HtmlContent(html_body),
+    )
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        return {"success": True, "status_code": response.status_code, "message": f"Email sent to {recipient_email} (status {response.status_code})"}
+    except Exception as e:
+        return {"success": False, "message": f"SendGrid error: {str(e)}"}
+
+
 def send_transactional_email(recipient_email: str, subject: str, html_body: str) -> dict:
     """Send a transactional/service email. Skips obvious QA addresses."""
     if recipient_email.endswith("@example.com") or "ops-test" in recipient_email:
