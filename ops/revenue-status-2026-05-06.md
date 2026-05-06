@@ -41,3 +41,10 @@
 ## Blockers
 - Railway CLI is not logged in locally, so direct `railway up` deploy is blocked unless login is restored.
 - Cold outreach send still requires James approval for first batch/content.
+
+## Expanded prospect batch update
+- Added 8 more Toronto/GTA prospects from subagent research, bringing `ops/targets.csv` to 10 total targets.
+- 7 targets currently have direct-email payloads prepared by `ops/send_outreach_batch.py`; 3 are contact-form/phone only.
+- Important quality rule added to `ops/outreach-previews-2026-05-06.md`: rows marked for screenshot verification should not be sent until exact public review evidence is captured.
+- Verified contact emails from official site HTML for: Rejuvenation Med Clinic, Medica Laser Spa, Skin Vitality, Tony Shamas, Dupont Auto Repair, Harbourfront Chiropractic.
+- Nothing has been sent externally.

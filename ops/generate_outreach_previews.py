@@ -16,7 +16,7 @@ TEMPLATE = """## {business_name}
 **Status:** draft only — not sent  
 **Niche/city:** {niche}, {city}  
 **Known weakness:** {weakness}  
-**Evidence snippets:** {bad_review_examples}  
+**Evidence:** {evidence_label}: {bad_review_examples}  
 **Contact needed:** {email_or_contact}
 
 ### Subject options
@@ -29,9 +29,7 @@ Hi {business_name} team,
 
 I was looking at recent public reviews for {business_name} and noticed a pattern around **{weakness_lower}**.
 
-A couple examples stood out:
-
-> {examples_as_quotes}
+{evidence_paragraph}
 
 Most businesses either ignore these reviews or reply with something generic. That usually makes the complaint look more credible.
 
@@ -53,11 +51,27 @@ def split_examples(s: str):
     parts = [p.strip().strip('"') for p in s.replace('“','"').replace('”','"').split(';') if p.strip()]
     return parts[:3] or [s.strip()]
 
+def build_evidence_text(raw: str):
+    raw = (raw or '').strip()
+    examples = split_examples(raw)
+    unverified = raw.lower().startswith('low-star themes to screenshot before send') or 'screenshot before send' in raw.lower()
+    if unverified:
+        cleaned = raw.replace('Low-star themes to screenshot before send:', '').strip()
+        themes = split_examples(cleaned)
+        return (
+            'themes to verify before sending',
+            'Before I send anything, I would verify the exact public review screenshots. The patterns I would look for are:\n\n> ' + '\n> '.join(themes)
+        )
+    return (
+        'visible public snippets',
+        'A couple examples stood out:\n\n> ' + '\n> '.join(examples)
+    )
+
 def main():
     rows = list(csv.DictReader(TARGETS.open()))
-    chunks = [f"# Review Reaper Outreach Previews — {datetime.now().strftime('%Y-%m-%d')}\n\nThese are drafts only. Nothing has been sent.\n"]
+    chunks = [f"# Review Reaper Outreach Previews — {datetime.now().strftime('%Y-%m-%d')}\n\nThese are drafts only. Nothing has been sent. Rows marked for screenshot verification should not be sent until exact public review evidence is captured.\n"]
     for r in rows:
-        examples = split_examples(r.get('bad_review_examples',''))
+        evidence_label, evidence_paragraph = build_evidence_text(r.get('bad_review_examples',''))
         chunks.append(TEMPLATE.format(
             business_name=r.get('business_name','').strip(),
             niche=r.get('niche','').strip(),
@@ -66,7 +80,8 @@ def main():
             weakness_lower=r.get('weakness','').strip().lower(),
             bad_review_examples=r.get('bad_review_examples','').strip(),
             email_or_contact=r.get('email_or_contact','').strip() or 'research needed',
-            examples_as_quotes='\n> '.join(examples),
+            evidence_label=evidence_label,
+            evidence_paragraph=evidence_paragraph,
         ))
     OUT.write_text('\n'.join(chunks))
     print(OUT)
