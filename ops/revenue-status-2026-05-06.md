@@ -159,3 +159,10 @@
 - Several auto prospects have stronger specific review pain than the dental list: overcharge/misdiagnosis, rude service, delayed/no callback, poor communication, stranded/towing complaints.
 - Some are marked `contact_gap` because evidence is strong but official website/contact path was weak.
 - Current prospect CSV now has dental + med spa + auto targets for prioritization.
+
+## Send-ready approval pack v2 created
+- Created `ops/send-ready-approval-pack-2026-05-06-v2.md`.
+- Recommendation: start with 5 highly specific mini-audit offers, not a blast.
+- Best first lane: auto repair + med spa, because review pain is concrete and financially meaningful.
+- Priority prospects include BellaBody, Argyle Auto Care, Junior's Auto Repair, Eurasian Auto Repair, RepairOne, B & E Towing, Our Dentistry Goreway, My Dentist Vancouver, Skin Vitality, and Bellair Laser.
+- Still approval-gated and evidence-verification gated before sending.
