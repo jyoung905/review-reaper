@@ -1,0 +1,43 @@
+# Review Reaper Revenue Status — 2026-05-06
+
+## Live app health
+- Production landing: `https://review-reaper-production.up.railway.app/` returns 200.
+- Production pricing: `/pricing` returns 200 and shows the $97/mo checkout page.
+- Production Stripe checkout: `/api/create-checkout-session` returns a live Stripe Checkout URL.
+- Old Railway URL `https://web-production-523053.up.railway.app/` returns 404; use `review-reaper-production.up.railway.app`.
+
+## Code fixes prepared locally
+- Added `/health` JSON endpoint for deploy/uptime checks.
+- Locked `/api/send-outreach` behind admin password auth. It previously accepted unauthenticated POSTs.
+- Locked `/api/scrape-businesses` behind admin password auth.
+- Fixed admin JS helper so GET requests no longer send a JSON body.
+- Made outreach email `FROM_EMAIL`, `FROM_NAME`, and CTA `BASE_URL` configurable from environment.
+- Escaped dynamic outreach email fields before rendering HTML.
+
+## Local verification
+- `python3 -m compileall api src` passes in the project venv.
+- Local `/health` returns JSON 200.
+- Local unauthenticated `/api/send-outreach` returns 401.
+- Local authenticated `/api/scrape-businesses` returns 200 placeholder response.
+- Local `/pricing` returns 200.
+- Local checkout returns simulated success because local `STRIPE_PRICE_ID` is blank; production checkout is live.
+
+## First outreach batch
+- Draft-only outreach previews generated: `ops/outreach-previews-2026-05-06.md`.
+- Prospect list updated: `ops/targets.csv`.
+- Nothing has been sent externally.
+
+### Candidate 1: Midtown Dental Centre
+- Contact found: `info@midtowndental.ca`; contact page `https://midtowndental.ca/contact/`; phone `(416) 966-3368`.
+- Angle: pricing transparency and alleged unnecessary upsells.
+- Status: draft ready; needs James approval before send.
+
+### Candidate 2: WestClair Dental
+- Contact found: official contact form `https://westclairdental.com/contact`; phone `+1 416-760-7660`.
+- No direct email found on official site.
+- Angle: staff/front desk rudeness complaints.
+- Status: contact-form draft ready; needs James approval before send.
+
+## Blockers
+- Railway CLI is not logged in locally, so direct `railway up` deploy is blocked unless login is restored.
+- Cold outreach send still requires James approval for first batch/content.
