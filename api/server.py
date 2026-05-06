@@ -471,16 +471,16 @@ footer a{{color:#a8b2d1;text-decoration:none}}
 <nav><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="/admin">Dashboard</a></nav>
 </div></header>
 <section class="hero"><div class="container">
-<h1>Turn Bad Reviews Into <span>Revenue</span></h1>
-<p>AI-powered review responses that bring customers back. Automatically detect negative reviews, generate professional replies, and offer recovery incentives.</p>
+<h1>Turn Bad Reviews Into <span>Trust</span></h1>
+<p>Get a free mini-audit before you pay: negative review themes, professional response drafts, and the first reputation fix we would make.</p>
 <form id="audit-form" class="cta-group" onsubmit="return submitAudit(event)">
 <input type="email" id="audit-email" placeholder="Your email address" required>
 <input type="text" id="audit-business" placeholder="Business name (optional)">
-<button type="submit">Get Your Free Review Audit &rarr;</button></form>
-<p class="trust">&#128274; No credit card required &bull; Free audit report in minutes</p>
+<button type="submit">Request Free Mini-Audit &rarr;</button></form>
+<p class="trust">&#128274; No credit card required &bull; No auto-posting &bull; Private audit first</p>
 </div></section>
 <section class="features" id="features"><div class="container">
-<h2>Stop Ignoring Bad Reviews. Start Converting Them.</h2>
+<h2>Start with a private audit. Subscribe only if it is useful.</h2>
 <div class="features-grid">
 <div class="feature-card"><div class="icon">&#128269;</div><h3>Auto-Detect Bad Reviews</h3><p>Enter your Google Place ID and we instantly pull every negative review (rating &le; 3).</p></div>
 <div class="feature-card"><div class="icon">&#129302;</div><h3>AI Response Drafts</h3><p>Each negative review gets a professional, context-aware response. Apologizes, addresses the issue, offers a resolution path.</p></div>
@@ -501,7 +501,7 @@ footer a{{color:#a8b2d1;text-decoration:none}}
 <li>Approve/reject workflow</li>
 <li>Email audit reports</li>
 </ul>
-<a href="/pricing" class="cta">Subscribe Now &rarr;</a>
+<a href="/mini-audit" class="cta">Start With Free Mini-Audit &rarr;</a>
 </div></div></section>
 <section class="faq" id="faq"><div class="container">
 <h2>Frequently Asked Questions</h2><div class="faq-grid">
@@ -516,7 +516,7 @@ footer a{{color:#a8b2d1;text-decoration:none}}
 <div id="toast" class="toast"></div>
 <script>
 function showToast(m,e){{var t=document.getElementById("toast");t.textContent=m;t.style.background=e?"#d32f2f":"#1a1a2e";t.classList.add("show");setTimeout(function(){{t.classList.remove("show")}},5000)}}
-async function submitAudit(e){{e.preventDefault();var em=document.getElementById("audit-email").value,bz=document.getElementById("audit-business").value,btn=e.target.querySelector("button");btn.disabled=true;btn.textContent="Submitting...";try{{var r=await fetch("/api/audit",{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{email:em,business_name:bz}})}}),d=await r.json();if(d.success){{var msg="Audit request submitted!";if(d.audit){{msg="&#10004; Audit complete! "+d.audit.negative_reviews+" negative reviews found."}}showToast(msg);btn.textContent="&#10004; Submitted!";setTimeout(function(){{btn.textContent="Get Your Free Review Audit &rarr;";btn.disabled=false}},3000)}}else{{throw new Error(d.error||"Error")}}}}catch(err){{showToast("Error: "+err.message,true);btn.disabled=false;btn.textContent="Get Your Free Review Audit &rarr;"}}return false}}
+async function submitAudit(e){{e.preventDefault();var em=document.getElementById("audit-email").value,bz=document.getElementById("audit-business").value,btn=e.target.querySelector("button");btn.disabled=true;btn.textContent="Submitting...";try{{var r=await fetch("/api/mini-audit",{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{email:em,business_name:bz}})}}),d=await r.json();if(d.success){{showToast("Mini-audit request received. We will prepare it before asking you to subscribe.");btn.textContent="&#10004; Requested!";setTimeout(function(){{btn.textContent="Request Free Mini-Audit &rarr;";btn.disabled=false}},3000)}}else{{throw new Error(d.error||"Error")}}}}catch(err){{showToast("Error: "+err.message,true);btn.disabled=false;btn.textContent="Request Free Mini-Audit &rarr;"}}return false}}
 </script>
 </body>
 </html>'''

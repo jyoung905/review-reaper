@@ -109,3 +109,8 @@
 - Added `ops/generate_followups.py`.
 - Generated current follow-up file: `ops/followup-drafts-2026-05-06.md`.
 - No follow-ups due today; first two are due 2026-05-11 if no reply.
+
+## Landing page aligned with value-first funnel
+- Homepage hero now pushes free mini-audit before paid subscription.
+- Homepage form now submits to `/api/mini-audit` instead of the older `/api/audit` path.
+- Homepage pricing card CTA now sends prospects to `/mini-audit`, not directly to Stripe checkout.
