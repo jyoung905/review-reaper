@@ -39,3 +39,25 @@ Do not scale beyond 5–10/day until:
 - at least one prospect has viewed a mini-audit,
 - one paid onboarding has been rehearsed or completed,
 - deliverability is healthy.
+
+## Domain selected / DNS progress
+- Domain selected: `reviewreaper.co`
+- Primary public URL should be: `https://www.reviewreaper.co`
+- Root should forward permanently to: `https://www.reviewreaper.co`
+- GoDaddy DNS records used for Railway:
+  - `CNAME www -> 6vvx5v0y.up.railway.app`
+  - `TXT _railway-verify.www -> railway-verify=6c73d7204cdd19ba5f1a8f456b9becf8af7de3c733a12d6981853bba85e9807d`
+- Railway custom domain verified after setting target port to `8080`.
+
+## Immediate next actions after DNS settles
+1. Set Railway service variable:
+   - `BASE_URL=https://www.reviewreaper.co`
+2. Redeploy/restart Railway service.
+3. Verify:
+   - `https://www.reviewreaper.co/health` returns 200
+   - homepage loads mini-audit funnel
+   - `/mini-audit` loads
+   - `/pricing` Stripe checkout returns a Stripe URL
+   - mini-audit report links use `www.reviewreaper.co`
+4. Configure SendGrid domain authentication for `reviewreaper.co`.
+5. Use sender: `hello@reviewreaper.co` unless James chooses otherwise.
