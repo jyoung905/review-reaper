@@ -64,3 +64,8 @@ Review Reaper does not auto-post responses. It delivers approval-ready review re
 - Add `--save` to save it through `/api/admin/mini-audit/save` and receive a customer-facing report URL.
 - Admin can mark a mini-audit sent through `/api/admin/mini-audit/mark-sent`, which sends the report email and updates status.
 - `/admin/ops` shows report URLs for saved mini-audits.
+
+## Follow-up system
+- `ops/generate_followups.py` creates follow-up drafts from `ops/sent-log.csv`.
+- It sends nothing. It separates due-now follow-ups from upcoming follow-ups.
+- Current first-batch follow-ups are due 2026-05-11 if no reply.

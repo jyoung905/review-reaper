@@ -104,3 +104,8 @@
 - Added mini-audit report email delivery helper.
 - `/admin/ops` now exposes saved report URLs in the mini-audit queue.
 - Local verification passed: generated Dupont Auto Repair mini-audit from target CSV, saved it through API, rendered report, and exercised mark-sent path with QA-safe skipped email.
+
+## Follow-up draft system added
+- Added `ops/generate_followups.py`.
+- Generated current follow-up file: `ops/followup-drafts-2026-05-06.md`.
+- No follow-ups due today; first two are due 2026-05-11 if no reply.
