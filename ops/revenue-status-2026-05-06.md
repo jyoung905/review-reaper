@@ -63,3 +63,14 @@
 - Dupont Auto Repair → `info@dupontautorepair.ca` → SendGrid accepted status 202.
 - Logged both sends in `ops/sent-log.csv`.
 - Marked both targets as sent in `ops/targets.csv` with follow-up due 2026-05-11 if no reply.
+
+## Outbound paused after business-plan review
+- James correctly flagged that the outbound/customer journey was underdeveloped.
+- Outbound is now paused until business plan, reply handling, onboarding, and fulfillment are completed.
+- Added docs:
+  - `ops/OUTBOUND_PAUSED.md`
+  - `ops/BUSINESS_PLAN.md`
+  - `ops/REPLY_HANDLING_SOP.md`
+  - `ops/ONBOARDING_AND_FULFILLMENT.md`
+- New strategy: cold email should offer a free mini-audit first, not push straight to monthly subscription.
+- If existing recipients reply, draft/helpful responses should be prepared; do not send externally without James approval unless explicitly delegated.
