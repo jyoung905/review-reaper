@@ -70,6 +70,22 @@ def send(row: dict, base_url: str, password: str) -> tuple[bool, str, int | None
     return 200 <= status < 300, body[:500], status
 
 
+def load_sent_rows() -> list[dict]:
+    if not SENT_LOG.exists() or SENT_LOG.stat().st_size == 0:
+        return []
+    return list(csv.DictReader(SENT_LOG.open()))
+
+
+def sent_index(rows: list[dict]) -> tuple[set[str], set[str]]:
+    names = {r.get("business_name", "").strip().lower() for r in rows if r.get("business_name")}
+    emails = {r.get("email_or_contact", "").strip().lower() for r in rows if r.get("email_or_contact")}
+    return names, emails
+
+
+def sent_today_count(rows: list[dict], today: str) -> int:
+    return sum(1 for r in rows if r.get("date", "").startswith(today))
+
+
 def append_sent(row: dict, status_code: int | None, note: str) -> None:
     sent_at = datetime.now()
     followup_due = sent_at + timedelta(days=5)
@@ -118,6 +134,7 @@ def main() -> int:
     parser.add_argument("--batch", default=str(DEFAULT_BATCH))
     parser.add_argument("--send", action="store_true")
     parser.add_argument("--limit", type=int, default=15)
+    parser.add_argument("--daily-cap", type=int, default=int(os.getenv("REVIEW_REAPER_DAILY_CAP", "80")))
     parser.add_argument("--base-url", default=os.getenv("REVIEW_REAPER_BASE_URL", "https://www.reviewreaper.co"))
     args = parser.parse_args()
 
@@ -140,8 +157,26 @@ def main() -> int:
         return 2
 
     sent_rows: list[dict] = []
+    skipped = 0
     failures = 0
+    today = datetime.now().date().isoformat()
     for row in rows:
+        # Reload before every send so concurrent/overlapping waves cannot exceed
+        # the daily cap or send duplicate names/emails.
+        existing = load_sent_rows()
+        existing_names, existing_emails = sent_index(existing)
+        already_today = sent_today_count(existing, today)
+        business_key = row["business_name"].strip().lower()
+        email_key = row["email"].strip().lower()
+
+        if args.daily_cap > 0 and already_today >= args.daily_cap:
+            print(f"Daily cap reached ({already_today}/{args.daily_cap}); stopping before {row['business_name']}.")
+            break
+        if business_key in existing_names or email_key in existing_emails:
+            print(f"SKIP duplicate already sent: {row['business_name']} -> {row['email']}")
+            skipped += 1
+            continue
+
         ok, note, status_code = send(row, args.base_url, password)
         print(f"{row['business_name']} -> {row['email']} :: {note}")
         if ok:
@@ -151,7 +186,7 @@ def main() -> int:
             failures += 1
 
     mark_target_sent(sent_rows)
-    print(f"Sent {len(sent_rows)} / {len(rows)}. Failures: {failures}.")
+    print(f"Sent {len(sent_rows)} / {len(rows)}. Skipped: {skipped}. Failures: {failures}.")
     return 0 if failures == 0 else 1
 
 

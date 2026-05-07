@@ -29,3 +29,5 @@ REVIEW_REAPER_OUTREACH_APPROVED=yes ./ops/send_soft_outreach_batch.py --send --l
 ```
 
 After each wave: verify SendGrid accepted the sends, duplicate-check names/emails, log successful sends in `sent-log.csv`, update `targets.csv`, and continue until 80/day or a quality/deliverability stop condition is hit.
+
+The sender script now also enforces duplicate and daily-cap protection at send time: before every individual email it reloads `sent-log.csv`, skips already-sent names/emails, and stops when the daily cap is reached.
