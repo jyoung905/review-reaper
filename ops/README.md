@@ -1,8 +1,10 @@
 # Review Reaper Ops
 
 ## Current operating rule
-- Prepare targets and outreach drafts proactively.
-- Do not send external cold outreach until James approves the first batch/content.
+- James approved daily Review Reaper outbound at up to 80 companies/day starting 2026-05-07.
+- Send only verified direct business emails from official sites/contact pages.
+- No contact forms, no duplicates, no scraped personal emails, no forced low-fit targets.
+- Send in controlled waves of up to 20 and pause if SendGrid rejects, bounce/error/spam-risk signals appear, spam complaints/unsubscribes are detected, or reply quality degrades.
 
 ## First batch plan
 - Market: Toronto / GTA
@@ -18,16 +20,12 @@
 - `replies.md` — reply tracking
 
 ## Sending rule
-Generate/send flow:
+Generate/send flow still uses the sender scripts, but the daily cron has standing approval from James for up to 80/day.
+
+Use waves, not one blind blast:
 
 ```bash
-./ops/send_outreach_batch.py --limit 5
+REVIEW_REAPER_OUTREACH_APPROVED=yes ./ops/send_soft_outreach_batch.py --send --limit 20
 ```
 
-This only prints API payloads. To actually send after James approves the exact batch/content:
-
-```bash
-REVIEW_REAPER_OUTREACH_APPROVED=yes ./ops/send_outreach_batch.py --send --limit 5
-```
-
-Do not set `REVIEW_REAPER_OUTREACH_APPROVED=yes` until the batch has explicit approval.
+After each wave: verify SendGrid accepted the sends, duplicate-check names/emails, log successful sends in `sent-log.csv`, update `targets.csv`, and continue until 80/day or a quality/deliverability stop condition is hit.
