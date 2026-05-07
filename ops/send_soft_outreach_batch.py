@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fcntl
 import json
 import os
 import sys
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BATCH = ROOT / "ops" / "email-ready-15-2026-05-06.csv"
 SENT_LOG = ROOT / "ops" / "sent-log.csv"
 TARGETS = ROOT / "ops" / "targets.csv"
+LOCK_FILE = ROOT / "ops" / ".send-soft-outreach.lock"
 
 
 def load_dotenv() -> None:
@@ -160,32 +162,34 @@ def main() -> int:
     skipped = 0
     failures = 0
     today = datetime.now().date().isoformat()
-    for row in rows:
-        # Reload before every send so concurrent/overlapping waves cannot exceed
-        # the daily cap or send duplicate names/emails.
-        existing = load_sent_rows()
-        existing_names, existing_emails = sent_index(existing)
-        already_today = sent_today_count(existing, today)
-        business_key = row["business_name"].strip().lower()
-        email_key = row["email"].strip().lower()
+    with LOCK_FILE.open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        for row in rows:
+            # Reload before every send so overlapping waves cannot exceed
+            # the daily cap or send duplicate names/emails.
+            existing = load_sent_rows()
+            existing_names, existing_emails = sent_index(existing)
+            already_today = sent_today_count(existing, today)
+            business_key = row["business_name"].strip().lower()
+            email_key = row["email"].strip().lower()
 
-        if args.daily_cap > 0 and already_today >= args.daily_cap:
-            print(f"Daily cap reached ({already_today}/{args.daily_cap}); stopping before {row['business_name']}.")
-            break
-        if business_key in existing_names or email_key in existing_emails:
-            print(f"SKIP duplicate already sent: {row['business_name']} -> {row['email']}")
-            skipped += 1
-            continue
+            if args.daily_cap > 0 and already_today >= args.daily_cap:
+                print(f"Daily cap reached ({already_today}/{args.daily_cap}); stopping before {row['business_name']}.")
+                break
+            if business_key in existing_names or email_key in existing_emails:
+                print(f"SKIP duplicate already sent: {row['business_name']} -> {row['email']}")
+                skipped += 1
+                continue
 
-        ok, note, status_code = send(row, args.base_url, password)
-        print(f"{row['business_name']} -> {row['email']} :: {note}")
-        if ok:
-            append_sent(row, status_code, note)
-            sent_rows.append(row)
-        else:
-            failures += 1
+            ok, note, status_code = send(row, args.base_url, password)
+            print(f"{row['business_name']} -> {row['email']} :: {note}")
+            if ok:
+                append_sent(row, status_code, note)
+                sent_rows.append(row)
+            else:
+                failures += 1
 
-    mark_target_sent(sent_rows)
+        mark_target_sent(sent_rows)
     print(f"Sent {len(sent_rows)} / {len(rows)}. Skipped: {skipped}. Failures: {failures}.")
     return 0 if failures == 0 else 1
 
